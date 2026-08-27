@@ -43,6 +43,7 @@ if /i "%~1"=="start" goto start
 if /i "%~1"=="test" goto test
 if /i "%~1"=="typecheck" goto typecheck
 if /i "%~1"=="clean" goto clean
+if /i "%~1"=="db:seed" goto db_seed
 if /i "%~1"=="db:studio" goto db_studio
 if /i "%~1"=="db:migrate" goto db_migrate
 if /i "%~1"=="db:push" goto db_push
@@ -50,7 +51,7 @@ if /i "%~1"=="db:generate" goto db_generate
 if /i "%~1"=="db:validate" goto db_validate
 
 echo [ERROR] Unknown command: %~1
-echo Usage: run.bat [dev^|build^|start^|test^|typecheck^|clean^|db:studio^|db:migrate^|db:push^|db:generate]
+echo Usage: run.bat [dev^|build^|start^|test^|typecheck^|clean^|db:seed^|db:studio^|db:migrate^|db:push^|db:generate]
 exit /b 1
 
 :menu
@@ -90,20 +91,22 @@ echo ==================================================
 echo         Prisma Database Management
 echo ==================================================
 echo.
-echo   1) Open Prisma Studio (Web GUI)
-echo   2) Run Migrations (bun run db:migrate)
-echo   3) Push Schema (bun run db:push)
-echo   4) Generate Prisma Client (bun run db:generate)
-echo   5) Validate Schema (bun run db:validate)
+echo   1) Seed Database (bun run db:seed)
+echo   2) Open Prisma Studio (Web GUI)
+echo   3) Run Migrations (bun run db:migrate)
+echo   4) Push Schema (bun run db:push)
+echo   5) Generate Prisma Client (bun run db:generate)
+echo   6) Validate Schema (bun run db:validate)
 echo   0) Back to Main Menu
 echo.
-set /p db_choice="Enter choice [0-5]: "
+set /p db_choice="Enter choice [0-6]: "
 
-if "%db_choice%"=="1" goto db_studio
-if "%db_choice%"=="2" goto db_migrate
-if "%db_choice%"=="3" goto db_push
-if "%db_choice%"=="4" goto db_generate
-if "%db_choice%"=="5" goto db_validate
+if "%db_choice%"=="1" goto db_seed
+if "%db_choice%"=="2" goto db_studio
+if "%db_choice%"=="3" goto db_migrate
+if "%db_choice%"=="4" goto db_push
+if "%db_choice%"=="5" goto db_generate
+if "%db_choice%"=="6" goto db_validate
 if "%db_choice%"=="0" goto menu
 
 echo Invalid choice.
@@ -142,6 +145,10 @@ goto end
 :clean
 echo [INFO] Cleaning build cache...
 call bun run clean
+goto end
+
+:db_seed
+call bun run db:seed
 goto end
 
 :db_studio

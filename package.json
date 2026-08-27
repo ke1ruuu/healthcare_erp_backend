@@ -12,8 +12,12 @@
     "db:generate": "bunx prisma generate",
     "db:migrate": "bunx prisma migrate dev",
     "db:push": "bunx prisma db push",
+    "db:seed": "bun run prisma/seed.ts",
     "db:studio": "bunx prisma studio",
     "db:validate": "bunx prisma validate"
+  },
+  "prisma": {
+    "seed": "bun run prisma/seed.ts"
   },
   "dependencies": {
     "@prisma/client": "^6.19.3",

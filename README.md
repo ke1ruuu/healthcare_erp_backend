@@ -18,6 +18,7 @@ You can run, build, and manage everything using the all-in-one runner script wit
 ./run.sh build        # Typecheck & build production bundle
 ./run.sh start        # Start compiled production server
 ./run.sh test         # Run automated tests
+./run.sh db:seed      # Seed database with initial accounts
 ./run.sh db:studio    # Open Prisma Studio web GUI
 ./run.sh db:migrate   # Run database migrations
 ```
@@ -32,6 +33,7 @@ run.bat dev
 run.bat build
 run.bat start
 run.bat test
+run.bat db:seed
 run.bat db:studio
 run.bat db:migrate
 ```
@@ -53,13 +55,14 @@ run.bat db:migrate
 ```
 healthcare_erp_backend/
 ├── prisma/
-│   └── schema.prisma         # Prisma data models and schema
+│   ├── schema.prisma         # Prisma data models and schema
+│   └── seed.ts               # Database seeder (idempotent user accounts)
 ├── scripts/                  # Standalone automation scripts
 │   ├── dev.sh / dev.bat      # Start dev server
 │   ├── build.sh / build.bat  # Production build bundle
 │   ├── start.sh / start.bat  # Start production server
 │   ├── test.sh / test.bat    # Run tests
-│   └── db.sh / db.bat        # Database utilities
+│   └── db.sh / db.bat        # Database utilities (seed, migrate, studio)
 ├── src/
 │   ├── config/
 │   │   └── env.ts            # Type-safe environment validation (Zod)
@@ -79,6 +82,32 @@ healthcare_erp_backend/
 ├── package.json              # Project scripts & dependencies
 └── tsconfig.json             # TypeScript config with @/* path aliases
 ```
+
+---
+
+## Database Seeding & Default Accounts
+
+To populate the database with initial Healthcare ERP roles and staff accounts:
+
+```sh
+bun run db:seed
+# or: ./run.sh db:seed
+```
+
+### Seeded Credentials
+
+> **Default Password for all accounts**: `Password@123`
+
+| Role | Email | Name | Status |
+|---|---|---|---|
+| `SUPER_ADMIN` | `superadmin@healthcare-erp.local` | System SuperAdmin | `ACTIVE` |
+| `ADMIN` | `admin@healthcare-erp.local` | Hospital Admin | `ACTIVE` |
+| `DOCTOR` | `doctor.smith@healthcare-erp.local` | John Smith | `ACTIVE` |
+| `NURSE` | `nurse.sarah@healthcare-erp.local` | Sarah Connor | `ACTIVE` |
+| `PHARMACIST` | `pharmacist.david@healthcare-erp.local` | David Kim | `ACTIVE` |
+| `RECEPTIONIST` | `receptionist.clara@healthcare-erp.local` | Clara Oswald | `ACTIVE` |
+| `LAB_TECHNICIAN` | `labtech.james@healthcare-erp.local` | James Wilson | `ACTIVE` |
+| `ACCOUNTANT` | `accountant.emma@healthcare-erp.local` | Emma Watson | `ACTIVE` |
 
 ---
 
@@ -113,6 +142,7 @@ bun run start        # Run production build artifact
 bun test             # Run automated tests
 
 # Database
+bun run db:seed      # Seed database with sample accounts
 bun run db:generate  # Generate Prisma Client
 bun run db:migrate   # Create and apply migrations
 bun run db:push      # Push schema directly to DB
