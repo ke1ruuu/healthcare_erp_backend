@@ -4,12 +4,14 @@ A backend API for a Healthcare Enterprise Resource Planning (ERP) system, built 
 
 ---
 
-## Documentation & Changelogs
+## Documentation & Monitoring
 
+- 🖥️ [**React Vite Monitoring Dashboard**](http://localhost:5173) (`dashboard/`) — Real-time telemetry, memory gauges, database latency graphs, domain data explorer, and interactive API workbench.
 - 📑 [**Interactive Swagger UI**](http://localhost:3000/docs) (`/docs` or `/swagger`) — Live OpenAPI 3.1 interactive testbed and schema explorer.
 - [**Engineering & Naming Conventions**](docs/CONVENTIONS.md) — File/folder naming, code identifiers, response envelopes, DTO validation, and healthcare compliance guidelines.
 - [**System Architecture & Data Flow**](docs/ARCHITECTURE.md) — Request lifecycle, middleware pipeline, layer breakdown (Route $\rightarrow$ Controller $\rightarrow$ Service $\rightarrow$ Repository $\rightarrow$ Prisma), and module templates.
 - [**Module Boundaries & Dependency Rules**](docs/MODULE_BOUNDARIES.md) — Domain taxonomy, ownership matrix, unidirectional dependency graph, and inter-module communication rules.
+- [**API Versioning Strategy & Route Registration**](docs/API_VERSIONING.md) — API root discovery, URI versioning (`/api/v1`), route aggregation, and deprecation policies.
 - [**Changelog & Releases**](CHANGELOG.md) — Version history and release notes ([v1.0.2 Changelog](changelogs/v1.0.2.md) / [v1.0.1 Changelog](changelogs/v1.0.1.md)).
 
 ---
@@ -56,8 +58,9 @@ run.bat db:migrate
 
 ## Tech Stack
 
-- **Runtime**: Bun
-- **Framework**: Hono
+- **Backend Runtime**: Bun & TypeScript
+- **Backend Framework**: Hono
+- **Monitoring UI**: React 19, Vite, Lucide React, Glassmorphic CSS System
 - **Documentation**: Swagger UI & OpenAPI 3.1 (`@hono/swagger-ui`)
 - **Database / ORM**: PostgreSQL & Prisma ORM
 - **Validation**: Zod (type-safe environment variables and schemas)
@@ -70,16 +73,26 @@ run.bat db:migrate
 ```
 healthcare_erp_backend/
 ├── changelogs/               # Versioned milestone release logs
-│   └── v1.0.1.md             # v1.0.1 Foundation & Architecture release log
+│   ├── v1.0.1.md             # v1.0.1 Foundation & Architecture release log
+│   └── v1.0.2.md             # v1.0.2 Architecture, Boundaries & Docs release log
+├── dashboard/                # React + Vite Monitoring Dashboard App
+│   ├── src/
+│   │   ├── components/       # Navbar, VitalsOverview, DomainExplorer, ApiWorkbench, ArchitectureGuard
+│   │   ├── App.tsx           # Dashboard layout & live telemetry state
+│   │   └── index.css         # Glassmorphic cyber-medical design system
+│   ├── package.json
+│   └── vite.config.ts        # Vite dev server with proxy to :3000
 ├── docs/                     # Engineering conventions & architecture documentation
 │   ├── CONVENTIONS.md        # Coding, naming, and compliance standards
 │   ├── ARCHITECTURE.md       # Architecture, request lifecycle, & module pattern
-│   └── MODULE_BOUNDARIES.md  # Domain taxonomy, ownerships & dependency rules
+│   ├── MODULE_BOUNDARIES.md  # Domain taxonomy, ownerships & dependency rules
+│   └── API_VERSIONING.md     # API root, URI versioning & route registration
 ├── prisma/
 │   ├── schema.prisma         # Prisma data models and schema
 │   └── seed.ts               # Database seeder (idempotent user accounts)
 ├── scripts/                  # Standalone automation scripts
 │   ├── check-boundaries.ts   # Architectural boundary static analyzer
+│   ├── check-api-drift.ts    # API contract breaking change detector
 │   ├── dev.sh / dev.bat      # Start dev server
 │   ├── build.sh / build.bat  # Production build bundle
 │   ├── start.sh / start.bat  # Start production server
@@ -100,12 +113,19 @@ healthcare_erp_backend/
 │   │   ├── events/           # In-memory domain Event Bus
 │   │   ├── types/            # Shared pagination & context types
 │   │   └── utils/            # Standardized response envelopes
-│   ├── routes/
-│   │   ├── docs.route.ts     # OpenAPI 3.1 JSON & Swagger UI router
-│   │   └── health.route.ts   # System & DB health check route
-│   └── index.ts              # Server entry point and middleware configuration
+│   ├── routes/               # Central route registration & version aggregators
+│   │   ├── index.ts          # Central route registrar (registerRoutes)
+│   │   ├── root.route.ts     # Root API discovery (GET /)
+│   │   ├── health.route.ts   # System & DB health check route (GET /health)
+│   │   ├── telemetry.route.ts # System telemetry vitals (/api/v1/telemetry)
+│   │   ├── dashboard.route.ts # Embedded Hono dashboard route (/dashboard)
+│   │   ├── docs.route.ts     # OpenAPI 3.1 JSON & Swagger UI router (/docs)
+│   │   └── v1.route.ts       # v1 API version aggregator router (/api/v1)
+│   ├── app.ts                # Application factory (createApp) & middleware pipeline
+│   └── index.ts              # Runtime server entrypoint (Bun.serve)
 ├── tests/
-│   ├── app.test.ts           # Automated endpoint tests
+│   ├── app.test.ts           # Root, v1, and 404 routing tests
+│   ├── telemetry.test.ts     # Telemetry & dashboard tests
 │   └── docs.test.ts          # OpenAPI & Swagger UI tests
 ├── .env                      # Local environment configuration (git-ignored)
 ├── .env.example              # Environment variables template
@@ -162,16 +182,21 @@ Copy `.env.example` to `.env` and configure your settings (or let `./run.sh` cre
 
 ## Bun / NPM Scripts
 
-You can also run commands directly with Bun:
+You can run commands directly with Bun:
 
 ```sh
-# Development
-bun run dev               # Start development server with hot-reloading
+# Backend Server
+bun run dev               # Start backend development server with hot-reloading
 bun run check:boundaries  # Enforce architectural module boundaries & imports
+bun run check:api-drift   # Check OpenAPI contract breaking changes
 bun run typecheck         # Run TypeScript type check
 bun run clean             # Clean build output
-bun run build             # Build production bundle (outputs to ./dist)
+bun run build             # Build production bundle (outputs to ./dist and dashboard/dist)
 bun run start             # Run production build artifact
+
+# React Monitoring Dashboard
+bun run dev:dashboard     # Launch React + Vite monitoring dashboard at http://localhost:5173
+bun run build:dashboard   # Build React monitoring dashboard bundle
 
 # Testing
 bun test                  # Run automated tests
@@ -187,24 +212,32 @@ bun run db:validate       # Validate Prisma schema
 
 ---
 
-## API Endpoints & Swagger Documentation
+## API Endpoints & Monitoring
+
+### React Vite Monitoring Dashboard
+- **Dev Server**: `http://localhost:5173` (`bun run dev:dashboard`)
+- **Embedded Dashboard**: `http://localhost:3000/dashboard`
 
 ### Interactive Swagger UI
 - **URL**: `http://localhost:3000/docs` (or `http://localhost:3000/swagger`)
 - **OpenAPI 3.1 Spec**: `http://localhost:3000/docs/openapi.json`
 
 ### System & Health
-- `GET /` - Root endpoint with API metadata
+- `GET /` - Root discovery endpoint with API metadata, dashboard, and version links
 - `GET /health` - System health and database connection status
+- `GET /api/v1/telemetry` - Live system vitals, memory gauges, and entity counters
 
-### Users Domain Module (`/api/v1/users`)
+### API Version 1 (`/api/v1`)
+- `GET /api/v1` - v1 discovery and available domain endpoints
+
+#### Users Domain Module (`/api/v1/users`)
 - `GET /api/v1/users` - List users (paginated)
 - `GET /api/v1/users/:id` - Get user by ID
 - `POST /api/v1/users` - Create user
 - `PATCH /api/v1/users/:id` - Update user
 - `DELETE /api/v1/users/:id` - Soft delete user
 
-### Patients Domain Module (`/api/v1/patients`)
+#### Patients Domain Module (`/api/v1/patients`)
 - `GET /api/v1/patients` - List patients (paginated, search by name/MRN)
 - `GET /api/v1/patients/mrn/:mrn` - Get patient by Medical Record Number
 - `GET /api/v1/patients/:id` - Get patient by ID

@@ -623,6 +623,39 @@ export const openApiSpec = {
         },
       },
     },
+    '/api/v1/telemetry': {
+      get: {
+        tags: ['System & Health'],
+        summary: 'System telemetry & live vitals',
+        description: 'Returns real-time memory usage (RSS, Heap), process uptime, database latency, and active entity counters.',
+        responses: {
+          200: {
+            description: 'System telemetry vitals',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    success: { type: 'boolean', example: true },
+                    data: {
+                      type: 'object',
+                      properties: {
+                        system: { type: 'object' },
+                        memory: { type: 'object' },
+                        database: { type: 'object' },
+                        entities: { type: 'object' },
+                        architecture: { type: 'object' },
+                        telemetryLatencyMs: { type: 'number' },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
   },
 }
 
