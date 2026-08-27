@@ -4,10 +4,11 @@ A backend API for a Healthcare Enterprise Resource Planning (ERP) system, built 
 
 ---
 
-## Documentation
+## Documentation & Changelogs
 
 - 📘 [**Engineering & Naming Conventions**](docs/CONVENTIONS.md) — File/folder naming, code identifiers, response envelopes, DTO validation, and healthcare compliance guidelines.
-- 🏛️ [**System Architecture & Data Flow**](docs/ARCHITECTURE.md) — Request lifecycle, middleware pipeline, layer breakdown (Route $\rightarrow$ Controller $\rightarrow$ Service $\rightarrow$ Prisma), and module templates.
+- 🏛️ [**System Architecture & Data Flow**](docs/ARCHITECTURE.md) — Request lifecycle, middleware pipeline, layer breakdown (Route $\rightarrow$ Controller $\rightarrow$ Service $\rightarrow$ Repository $\rightarrow$ Prisma), and module templates.
+- 📋 [**Changelog & Releases**](CHANGELOG.md) — Version history and release notes ([v1.0.1 Changelog](changelogs/v1.0.1.md)).
 
 ---
 
@@ -61,6 +62,8 @@ run.bat db:migrate
 ## Project Structure
 ```
 healthcare_erp_backend/
+├── changelogs/               # Versioned milestone release logs
+│   └── v1.0.1.md             # v1.0.1 Foundation & Architecture release log
 ├── docs/                     # Engineering conventions & architecture documentation
 │   ├── CONVENTIONS.md        # Coding, naming, and compliance standards
 │   └── ARCHITECTURE.md       # Architecture, request lifecycle, & module pattern
@@ -80,7 +83,7 @@ healthcare_erp_backend/
 │   │   └── prisma.ts         # Prisma client singleton instance
 │   ├── middlewares/
 │   │   └── error.middleware.ts # Global error & 404 handlers
-│   ├── modules/              # Domain-driven feature modules (Auth, Patients, etc.)
+│   ├── modules/              # Domain-driven feature modules (Auth, Users, Patients, etc.)
 │   ├── routes/
 │   │   └── health.route.ts   # System & DB health check route
 │   └── index.ts              # Server entry point and middleware configuration
@@ -88,6 +91,7 @@ healthcare_erp_backend/
 │   └── app.test.ts           # Automated endpoint tests
 ├── .env                      # Local environment configuration (git-ignored)
 ├── .env.example              # Environment variables template
+├── CHANGELOG.md              # Master release index
 ├── run.sh                    # Master runner script (macOS/Linux)
 ├── run.bat                   # Master runner script (Windows)
 ├── package.json              # Project scripts & dependencies
@@ -167,3 +171,8 @@ bun run db:validate  # Validate Prisma schema
 
 - `GET /` - Root endpoint with API metadata
 - `GET /health` - System health and database connection status
+- `GET /api/v1/users` - List users (paginated)
+- `GET /api/v1/users/:id` - Get user by ID
+- `POST /api/v1/users` - Create user
+- `PATCH /api/v1/users/:id` - Update user
+- `DELETE /api/v1/users/:id` - Soft delete user
