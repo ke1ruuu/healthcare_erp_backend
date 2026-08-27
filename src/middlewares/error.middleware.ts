@@ -10,6 +10,7 @@ import type { ApiErrorResponse, FieldErrorDetail } from '@/shared/types/response
 export const errorHandler: ErrorHandler = (err, c) => {
   const timestamp = new Date().toISOString()
   const path = c.req.path
+  const requestId = c.get('requestId')
 
   // 1. Custom Domain / Application Exceptions
   if (err instanceof AppException) {
@@ -19,6 +20,7 @@ export const errorHandler: ErrorHandler = (err, c) => {
       code: err.code,
       message: err.message,
       ...(err.errors && err.errors.length > 0 && { errors: err.errors }),
+      ...(requestId && { requestId }),
       timestamp,
       path,
     }
@@ -34,6 +36,7 @@ export const errorHandler: ErrorHandler = (err, c) => {
       code: 'VALIDATION_ERROR',
       message: 'Request validation failed',
       errors: fieldErrors,
+      ...(requestId && { requestId }),
       timestamp,
       path,
     }
@@ -49,6 +52,7 @@ export const errorHandler: ErrorHandler = (err, c) => {
         status: 409,
         code: 'DUPLICATE_RESOURCE',
         message: `Unique constraint violation on ${target}`,
+        ...(requestId && { requestId }),
         timestamp,
         path,
       }
@@ -61,6 +65,7 @@ export const errorHandler: ErrorHandler = (err, c) => {
         status: 404,
         code: 'RESOURCE_NOT_FOUND',
         message: 'The requested database record was not found',
+        ...(requestId && { requestId }),
         timestamp,
         path,
       }
@@ -73,6 +78,7 @@ export const errorHandler: ErrorHandler = (err, c) => {
         status: 400,
         code: 'FOREIGN_KEY_CONSTRAINT_FAILED',
         message: 'Invalid reference to a related resource',
+        ...(requestId && { requestId }),
         timestamp,
         path,
       }
@@ -87,6 +93,7 @@ export const errorHandler: ErrorHandler = (err, c) => {
       status: err.status,
       code: `HTTP_${err.status}`,
       message: err.message,
+      ...(requestId && { requestId }),
       timestamp,
       path,
     }
@@ -94,7 +101,9 @@ export const errorHandler: ErrorHandler = (err, c) => {
   }
 
   // 5. Uncaught Internal Server Errors
-  console.error(`[Unhandled Error] ${c.req.method} ${path}:`, err)
+  if (env.NODE_ENV !== 'test') {
+    console.error(`[Unhandled Error] [${requestId || '-'}] ${c.req.method} ${path}:`, err)
+  }
   const isDev = env.NODE_ENV === 'development'
 
   const payload: ApiErrorResponse = {
@@ -102,6 +111,7 @@ export const errorHandler: ErrorHandler = (err, c) => {
     status: 500,
     code: 'INTERNAL_SERVER_ERROR',
     message: isDev ? err.message || 'Internal Server Error' : 'Internal Server Error',
+    ...(requestId && { requestId }),
     timestamp,
     path,
     ...(isDev && { stack: err.stack }),
@@ -111,11 +121,13 @@ export const errorHandler: ErrorHandler = (err, c) => {
 }
 
 export const notFoundHandler: NotFoundHandler = (c) => {
+  const requestId = c.get('requestId')
   const payload: ApiErrorResponse = {
     success: false,
     status: 404,
     code: 'RESOURCE_NOT_FOUND',
     message: `Route not found: ${c.req.method} ${c.req.path}`,
+    ...(requestId && { requestId }),
     timestamp: new Date().toISOString(),
     path: c.req.path,
   }

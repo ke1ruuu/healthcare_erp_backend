@@ -11,6 +11,7 @@ export interface ApiSuccessResponse<T> {
   data: T
   message?: string
   meta?: PaginationMeta
+  requestId?: string
   timestamp?: string
 }
 
@@ -19,6 +20,7 @@ export interface ApiPaginatedResponse<T> {
   data: T[]
   meta: PaginationMeta
   message?: string
+  requestId?: string
   timestamp?: string
 }
 
@@ -28,6 +30,7 @@ export interface ApiErrorResponse {
   code: string
   message: string
   errors?: FieldErrorDetail[]
+  requestId?: string
   timestamp: string
   path?: string
   stack?: string
@@ -37,6 +40,7 @@ export type ApiResponse<T> = ApiSuccessResponse<T> | ApiPaginatedResponse<T> | A
 
 declare module 'hono' {
   interface ContextVariableMap {
+    requestId: string
     validatedBody: any
     validatedQuery: any
     validatedParam: any

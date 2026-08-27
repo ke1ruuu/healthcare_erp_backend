@@ -243,16 +243,23 @@ All API responses strictly adhere to unified JSON envelope schemas defined in `s
       "code": "invalid_string"
     }
   ],
+  "requestId": "9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d",
   "timestamp": "2026-08-27T12:30:00.000Z",
   "path": "/api/v1/patients"
 }
 ```
+
+### Request Correlation IDs (`X-Request-ID`) & Structured Logging
+- **Correlation Header**: Every incoming request is stamped with a UUID `X-Request-ID` and `X-Correlation-ID` header. If passed by the client or API gateway, the existing ID is preserved; otherwise, a cryptographically secure UUID is generated.
+- **Envelope Tracing**: The `requestId` is included in all success and error JSON envelopes and response headers.
+- **Structured Logging**: All HTTP requests and responses are logged in high precision with `[timestamp] [requestId] METHOD PATH -> STATUS (LATENCYms)`.
 
 ### Request Validation Rules (`validateBody`, `validateQuery`, `validateParam`)
 - **Body Validation**: Attach `validateBody(schema)` middleware on `POST` and `PATCH` routes. Validated payload is accessible via `c.get('validatedBody')`.
 - **Query Validation**: Attach `validateQuery(schema)` middleware on `GET` listing routes.
 - **Parameter Validation**: Attach `validateParam(schema)` middleware on routes with dynamic parameters (e.g. UUID, MRN).
 - **Exceptions**: Domain services throw typed `AppException` subclasses (`NotFoundException`, `ConflictException`, `UnauthorizedException`, `ForbiddenException`, `ValidationException`), which are caught and formatted automatically by the global `errorHandler`.
+- **404 Handling**: Unmatched routes trigger `notFoundHandler`, returning a 404 `RESOURCE_NOT_FOUND` error envelope with `requestId`.
 
 ---
 
