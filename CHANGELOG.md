@@ -8,6 +8,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## Releases
 
+### [v1.0.3](changelogs/v1.0.3.md) — 2026-08-27
+- **API Root & URI Versioning**: Created root discovery (`GET /`), version aggregator (`GET /api/v1`), and central route registrar (`src/routes/index.ts`).
+- **Breaking Change Detection**: Implemented `scripts/check-api-drift.ts` (`bun run check:api-drift`) enforcing contract backward compatibility.
+- **Request Validation**: Implemented `validateBody`, `validateQuery`, and `validateParam` middlewares with field-level structured error formatting.
+- **Response Envelopes**: Established standard envelopes (`sendSuccess`, `sendCreated`, `sendPaginated`, `sendNoContent`, `sendError`).
+- **Centralized Error & 404 Handlers**: Built global `errorHandler` catching `AppException` hierarchy, `ZodError`, Prisma database errors, and structured `notFoundHandler`.
+- **Request Correlation IDs**: Implemented `requestIdMiddleware` injecting `X-Request-ID` and `X-Correlation-ID` across contexts, headers, and error envelopes.
+- **High-Precision Logging**: Implemented `requestLoggerMiddleware` with microsecond latency measurements.
+- **Pagination, Filtering, Sorting & Searching**: Created `src/shared/types/pagination.type.ts` and `src/shared/utils/query.util.ts` supporting multi-column search, whitelisted sorting, and date ranges.
+- **Monitoring Dashboard**: Created React 19 + Vite dashboard SPA (`dashboard/`) with real-time telemetry endpoint (`/api/v1/telemetry`).
+- **OpenAPI 3.1 & Swagger UI**: Updated documentation to version `1.0.3`.
+
 ### [v1.0.2](changelogs/v1.0.2.md) — 2026-08-27
 - **Architecture**: Formalized Modular-Monolith and Domain-Module architecture with strict 4-tier layer isolation (Application Service, Repository, Controller, DTO).
 - **Module Boundaries & Ownerships**: Defined domain taxonomy, single-source-of-truth ownership matrix, and unidirectional dependency rules in `docs/MODULE_BOUNDARIES.md`.

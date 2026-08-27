@@ -5,9 +5,9 @@ export const openApiSpec = {
   openapi: '3.1.0',
   info: {
     title: 'Healthcare ERP Backend API',
-    version: '1.0.2',
+    version: '1.0.3',
     description:
-      'Enterprise Resource Planning (ERP) Backend API for healthcare systems, hospitals, and clinics. Built with Bun, Hono, and Prisma ORM following a Modular-Monolith architecture with 4-tier layer isolation, strict domain boundaries, URI versioning (/api/v1), and live telemetry monitoring.',
+      'Enterprise Resource Planning (ERP) Backend API for healthcare systems, hospitals, and clinics. Built with Bun, Hono, and Prisma ORM following a Modular-Monolith architecture with 4-tier layer isolation, strict domain boundaries, URI versioning (/api/v1), centralized error handling, request validation, structured correlation IDs (X-Request-ID), standardized pagination/sorting/filtering/searching, and live telemetry monitoring.',
     contact: {
       name: 'Healthcare ERP Engineering Team',
     },
@@ -72,6 +72,14 @@ export const openApiSpec = {
         ],
         example: 'O_POSITIVE',
       },
+      FieldErrorDetail: {
+        type: 'object',
+        properties: {
+          field: { type: 'string', example: 'email' },
+          message: { type: 'string', example: 'Invalid email address format' },
+          code: { type: 'string', example: 'invalid_string' },
+        },
+      },
       PaginationMeta: {
         type: 'object',
         properties: {
@@ -79,21 +87,24 @@ export const openApiSpec = {
           limit: { type: 'integer', example: 20 },
           total: { type: 'integer', example: 100 },
           totalPages: { type: 'integer', example: 5 },
+          hasNextPage: { type: 'boolean', example: true },
+          hasPreviousPage: { type: 'boolean', example: false },
         },
       },
       ErrorResponse: {
         type: 'object',
         properties: {
           success: { type: 'boolean', example: false },
-          error: {
-            type: 'object',
-            properties: {
-              code: { type: 'string', example: 'NOT_FOUND' },
-              message: { type: 'string', example: 'Resource not found' },
-              status: { type: 'integer', example: 404 },
-              details: { type: 'object', nullable: true },
-            },
+          status: { type: 'integer', example: 400 },
+          code: { type: 'string', example: 'VALIDATION_ERROR' },
+          message: { type: 'string', example: 'Request validation failed' },
+          errors: {
+            type: 'array',
+            items: { $ref: '#/components/schemas/FieldErrorDetail' },
           },
+          requestId: { type: 'string', format: 'uuid', example: '9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d' },
+          timestamp: { type: 'string', format: 'date-time' },
+          path: { type: 'string', example: '/api/v1/users' },
         },
       },
       UserResponse: {
@@ -205,7 +216,7 @@ export const openApiSpec = {
                   type: 'object',
                   properties: {
                     name: { type: 'string', example: 'Healthcare ERP Backend API' },
-                    version: { type: 'string', example: '1.0.2' },
+                    version: { type: 'string', example: '1.0.3' },
                     environment: { type: 'string', example: 'development' },
                     status: { type: 'string', example: 'operational' },
                     dashboard: { type: 'string', example: '/dashboard' },
@@ -263,13 +274,17 @@ export const openApiSpec = {
     '/api/v1/users': {
       get: {
         tags: ['Users Domain'],
-        summary: 'List users (paginated)',
+        summary: 'List users (paginated with search, sort, and date filters)',
         parameters: [
           { name: 'page', in: 'query', schema: { type: 'integer', default: 1 } },
-          { name: 'limit', in: 'query', schema: { type: 'integer', default: 20 } },
+          { name: 'limit', in: 'query', schema: { type: 'integer', default: 20, maximum: 100 } },
+          { name: 'sortBy', in: 'query', schema: { type: 'string', default: 'createdAt' } },
+          { name: 'sortOrder', in: 'query', schema: { type: 'string', enum: ['asc', 'desc'], default: 'desc' } },
           { name: 'role', in: 'query', schema: { $ref: '#/components/schemas/Role' } },
           { name: 'status', in: 'query', schema: { $ref: '#/components/schemas/UserStatus' } },
-          { name: 'search', in: 'query', schema: { type: 'string' } },
+          { name: 'search', in: 'query', description: 'Search across name, email, phone', schema: { type: 'string' } },
+          { name: 'startDate', in: 'query', description: 'Filter creation date after (YYYY-MM-DD or ISO)', schema: { type: 'string' } },
+          { name: 'endDate', in: 'query', description: 'Filter creation date before (YYYY-MM-DD or ISO)', schema: { type: 'string' } },
         ],
         responses: {
           200: {
@@ -285,6 +300,8 @@ export const openApiSpec = {
                       items: { $ref: '#/components/schemas/UserResponse' },
                     },
                     meta: { $ref: '#/components/schemas/PaginationMeta' },
+                    requestId: { type: 'string', format: 'uuid' },
+                    timestamp: { type: 'string', format: 'date-time' },
                   },
                 },
               },
@@ -314,8 +331,18 @@ export const openApiSpec = {
                     success: { type: 'boolean', example: true },
                     data: { $ref: '#/components/schemas/UserResponse' },
                     message: { type: 'string', example: 'User created successfully' },
+                    requestId: { type: 'string', format: 'uuid' },
+                    timestamp: { type: 'string', format: 'date-time' },
                   },
                 },
+              },
+            },
+          },
+          400: {
+            description: 'Validation failed or malformed body',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/ErrorResponse' },
               },
             },
           },
@@ -345,6 +372,8 @@ export const openApiSpec = {
                   properties: {
                     success: { type: 'boolean', example: true },
                     data: { $ref: '#/components/schemas/UserResponse' },
+                    requestId: { type: 'string', format: 'uuid' },
+                    timestamp: { type: 'string', format: 'date-time' },
                   },
                 },
               },
@@ -382,8 +411,19 @@ export const openApiSpec = {
                   properties: {
                     success: { type: 'boolean', example: true },
                     data: { $ref: '#/components/schemas/UserResponse' },
+                    message: { type: 'string', example: 'User updated successfully' },
+                    requestId: { type: 'string', format: 'uuid' },
+                    timestamp: { type: 'string', format: 'date-time' },
                   },
                 },
+              },
+            },
+          },
+          400: {
+            description: 'Validation failed',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/ErrorResponse' },
               },
             },
           },
@@ -411,6 +451,8 @@ export const openApiSpec = {
                   properties: {
                     success: { type: 'boolean', example: true },
                     message: { type: 'string', example: 'User deleted successfully' },
+                    requestId: { type: 'string', format: 'uuid' },
+                    timestamp: { type: 'string', format: 'date-time' },
                   },
                 },
               },
@@ -430,13 +472,17 @@ export const openApiSpec = {
     '/api/v1/patients': {
       get: {
         tags: ['Patients Domain'],
-        summary: 'List patients (paginated with search & filters)',
+        summary: 'List patients (paginated with search, sort, and date filters)',
         parameters: [
           { name: 'page', in: 'query', schema: { type: 'integer', default: 1 } },
-          { name: 'limit', in: 'query', schema: { type: 'integer', default: 20 } },
+          { name: 'limit', in: 'query', schema: { type: 'integer', default: 20, maximum: 100 } },
+          { name: 'sortBy', in: 'query', schema: { type: 'string', default: 'createdAt' } },
+          { name: 'sortOrder', in: 'query', schema: { type: 'string', enum: ['asc', 'desc'], default: 'desc' } },
           { name: 'gender', in: 'query', schema: { $ref: '#/components/schemas/Gender' } },
           { name: 'bloodType', in: 'query', schema: { $ref: '#/components/schemas/BloodType' } },
-          { name: 'search', in: 'query', description: 'Search by name, MRN, or email', schema: { type: 'string' } },
+          { name: 'search', in: 'query', description: 'Search across name, MRN, email, phone', schema: { type: 'string' } },
+          { name: 'startDate', in: 'query', description: 'Filter creation date after (YYYY-MM-DD or ISO)', schema: { type: 'string' } },
+          { name: 'endDate', in: 'query', description: 'Filter creation date before (YYYY-MM-DD or ISO)', schema: { type: 'string' } },
         ],
         responses: {
           200: {
@@ -452,6 +498,8 @@ export const openApiSpec = {
                       items: { $ref: '#/components/schemas/PatientResponse' },
                     },
                     meta: { $ref: '#/components/schemas/PaginationMeta' },
+                    requestId: { type: 'string', format: 'uuid' },
+                    timestamp: { type: 'string', format: 'date-time' },
                   },
                 },
               },
@@ -481,8 +529,18 @@ export const openApiSpec = {
                     success: { type: 'boolean', example: true },
                     data: { $ref: '#/components/schemas/PatientResponse' },
                     message: { type: 'string', example: 'Patient registered successfully' },
+                    requestId: { type: 'string', format: 'uuid' },
+                    timestamp: { type: 'string', format: 'date-time' },
                   },
                 },
+              },
+            },
+          },
+          400: {
+            description: 'Validation failed or malformed body',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/ErrorResponse' },
               },
             },
           },
@@ -512,6 +570,8 @@ export const openApiSpec = {
                   properties: {
                     success: { type: 'boolean', example: true },
                     data: { $ref: '#/components/schemas/PatientResponse' },
+                    requestId: { type: 'string', format: 'uuid' },
+                    timestamp: { type: 'string', format: 'date-time' },
                   },
                 },
               },
@@ -550,8 +610,18 @@ export const openApiSpec = {
                     success: { type: 'boolean', example: true },
                     data: { $ref: '#/components/schemas/PatientResponse' },
                     message: { type: 'string', example: 'Patient record updated successfully' },
+                    requestId: { type: 'string', format: 'uuid' },
+                    timestamp: { type: 'string', format: 'date-time' },
                   },
                 },
+              },
+            },
+          },
+          400: {
+            description: 'Validation failed',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/ErrorResponse' },
               },
             },
           },
@@ -579,6 +649,8 @@ export const openApiSpec = {
                   properties: {
                     success: { type: 'boolean', example: true },
                     message: { type: 'string', example: 'Patient record deleted successfully' },
+                    requestId: { type: 'string', format: 'uuid' },
+                    timestamp: { type: 'string', format: 'date-time' },
                   },
                 },
               },
@@ -610,6 +682,8 @@ export const openApiSpec = {
                   properties: {
                     success: { type: 'boolean', example: true },
                     data: { $ref: '#/components/schemas/PatientResponse' },
+                    requestId: { type: 'string', format: 'uuid' },
+                    timestamp: { type: 'string', format: 'date-time' },
                   },
                 },
               },
@@ -651,6 +725,8 @@ export const openApiSpec = {
                         telemetryLatencyMs: { type: 'number' },
                       },
                     },
+                    requestId: { type: 'string', format: 'uuid' },
+                    timestamp: { type: 'string', format: 'date-time' },
                   },
                 },
               },

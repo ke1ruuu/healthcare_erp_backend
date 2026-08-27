@@ -12,7 +12,7 @@ A backend API for a Healthcare Enterprise Resource Planning (ERP) system, built 
 - [**System Architecture & Data Flow**](docs/ARCHITECTURE.md) — Request lifecycle, middleware pipeline, layer breakdown (Route $\rightarrow$ Controller $\rightarrow$ Service $\rightarrow$ Repository $\rightarrow$ Prisma), and module templates.
 - [**Module Boundaries & Dependency Rules**](docs/MODULE_BOUNDARIES.md) — Domain taxonomy, ownership matrix, unidirectional dependency graph, and inter-module communication rules.
 - [**API Versioning Strategy & Route Registration**](docs/API_VERSIONING.md) — API root discovery, URI versioning (`/api/v1`), route aggregation, and deprecation policies.
-- [**Changelog & Releases**](CHANGELOG.md) — Version history and release notes ([v1.0.2 Changelog](changelogs/v1.0.2.md) / [v1.0.1 Changelog](changelogs/v1.0.1.md)).
+- [**Changelog & Releases**](CHANGELOG.md) — Version history and release notes ([v1.0.3 Changelog](changelogs/v1.0.3.md) / [v1.0.2 Changelog](changelogs/v1.0.2.md) / [v1.0.1 Changelog](changelogs/v1.0.1.md)).
 
 ---
 
