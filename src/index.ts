@@ -6,6 +6,7 @@ import { secureHeaders } from 'hono/secure-headers'
 import { env } from '@/config/env'
 import { errorHandler, notFoundHandler } from '@/middlewares/error.middleware'
 import { healthRoute } from '@/routes/health.route'
+import { userRoute } from '@/modules/users/user.route'
 
 const app = new Hono()
 
@@ -43,6 +44,7 @@ app.get('/', (c) => {
 
 // Route Modules
 app.route('/health', healthRoute)
+app.route('/api/v1/users', userRoute)
 
 // Centralized Error Handling
 app.onError(errorHandler)

@@ -4,6 +4,13 @@ A backend API for a Healthcare Enterprise Resource Planning (ERP) system, built 
 
 ---
 
+## Documentation
+
+- 📘 [**Engineering & Naming Conventions**](docs/CONVENTIONS.md) — File/folder naming, code identifiers, response envelopes, DTO validation, and healthcare compliance guidelines.
+- 🏛️ [**System Architecture & Data Flow**](docs/ARCHITECTURE.md) — Request lifecycle, middleware pipeline, layer breakdown (Route $\rightarrow$ Controller $\rightarrow$ Service $\rightarrow$ Prisma), and module templates.
+
+---
+
 ## Quick Start (Zero Configuration)
 
 You can run, build, and manage everything using the all-in-one runner script without memorizing commands:
@@ -54,6 +61,9 @@ run.bat db:migrate
 ## Project Structure
 ```
 healthcare_erp_backend/
+├── docs/                     # Engineering conventions & architecture documentation
+│   ├── CONVENTIONS.md        # Coding, naming, and compliance standards
+│   └── ARCHITECTURE.md       # Architecture, request lifecycle, & module pattern
 ├── prisma/
 │   ├── schema.prisma         # Prisma data models and schema
 │   └── seed.ts               # Database seeder (idempotent user accounts)
@@ -70,6 +80,7 @@ healthcare_erp_backend/
 │   │   └── prisma.ts         # Prisma client singleton instance
 │   ├── middlewares/
 │   │   └── error.middleware.ts # Global error & 404 handlers
+│   ├── modules/              # Domain-driven feature modules (Auth, Patients, etc.)
 │   ├── routes/
 │   │   └── health.route.ts   # System & DB health check route
 │   └── index.ts              # Server entry point and middleware configuration
