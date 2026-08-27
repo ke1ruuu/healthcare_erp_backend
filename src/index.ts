@@ -1,9 +1,56 @@
 import { Hono } from 'hono'
+import { cors } from 'hono/cors'
+import { logger } from 'hono/logger'
+import { prettyJSON } from 'hono/pretty-json'
+import { secureHeaders } from 'hono/secure-headers'
+import { env } from '@/config/env'
+import { errorHandler, notFoundHandler } from '@/middlewares/error.middleware'
+import { healthRoute } from '@/routes/health.route'
 
 const app = new Hono()
 
+// Global Middlewares
+app.use('*', logger())
+app.use('*', secureHeaders())
+app.use('*', prettyJSON())
+
+// CORS Middleware
+const allowedOrigins =
+  env.CORS_ORIGIN === '*'
+    ? '*'
+    : env.CORS_ORIGIN.split(',').map((origin) => origin.trim())
+
+app.use(
+  '*',
+  cors({
+    origin: allowedOrigins,
+    allowMethods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowHeaders: ['Content-Type', 'Authorization'],
+    credentials: true,
+  })
+)
+
+// Root API Welcome / Metadata
 app.get('/', (c) => {
-  return c.text('Hello Hono!')
+  return c.json({
+    name: 'Healthcare ERP Backend API',
+    version: '1.0.0',
+    environment: env.NODE_ENV,
+    status: 'active',
+    documentation: '/docs',
+  })
 })
 
-export default app
+// Route Modules
+app.route('/health', healthRoute)
+
+// Centralized Error Handling
+app.onError(errorHandler)
+app.notFound(notFoundHandler)
+
+console.log(`Healthcare ERP Backend running on http://localhost:${env.PORT} [${env.NODE_ENV}]`)
+
+export default {
+  port: env.PORT,
+  fetch: app.fetch,
+}

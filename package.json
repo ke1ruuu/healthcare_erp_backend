@@ -1,12 +1,27 @@
 {
   "name": "healthcare_erp_backend",
   "scripts": {
-    "dev": "bun run --hot src/index.ts"
+    "dev": "bun run --hot src/index.ts",
+    "clean": "rm -rf dist",
+    "typecheck": "bunx tsc --noEmit",
+    "build:bundle": "bun build src/index.ts --outdir dist --target bun --sourcemap",
+    "build": "bun run clean && bun run typecheck && bun run build:bundle",
+    "start": "bun run dist/index.js",
+    "test": "bun test",
+    "postinstall": "bun run db:generate",
+    "db:generate": "bunx prisma generate",
+    "db:migrate": "bunx prisma migrate dev",
+    "db:push": "bunx prisma db push",
+    "db:studio": "bunx prisma studio",
+    "db:validate": "bunx prisma validate"
   },
   "dependencies": {
-    "hono": "^4.13.4"
+    "@prisma/client": "^6.19.3",
+    "hono": "^4.13.4",
+    "zod": "^3.24.2"
   },
   "devDependencies": {
-    "@types/bun": "latest"
+    "@types/bun": "latest",
+    "prisma": "^6.19.3"
   }
 }
