@@ -6,7 +6,9 @@ import { secureHeaders } from 'hono/secure-headers'
 import { env } from '@/config/env'
 import { errorHandler, notFoundHandler } from '@/middlewares/error.middleware'
 import { healthRoute } from '@/routes/health.route'
-import { userRoute } from '@/modules/users/user.route'
+import { docsRoute } from '@/routes/docs.route'
+import { userRoute } from '@/modules/users'
+import { patientRoute } from '@/modules/patients'
 
 const app = new Hono()
 
@@ -35,16 +37,21 @@ app.use(
 app.get('/', (c) => {
   return c.json({
     name: 'Healthcare ERP Backend API',
-    version: '1.0.0',
+    version: '1.0.1',
     environment: env.NODE_ENV,
     status: 'active',
     documentation: '/docs',
   })
 })
 
+// Documentation & Swagger UI
+app.route('/docs', docsRoute)
+app.get('/swagger', (c) => c.redirect('/docs'))
+
 // Route Modules
 app.route('/health', healthRoute)
 app.route('/api/v1/users', userRoute)
+app.route('/api/v1/patients', patientRoute)
 
 // Centralized Error Handling
 app.onError(errorHandler)

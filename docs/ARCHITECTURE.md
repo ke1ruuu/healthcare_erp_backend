@@ -2,6 +2,8 @@
 
 This document describes the architectural layout, domain layering, request lifecycle, and data flow of the **Healthcare ERP Backend**.
 
+> For detailed domain ownership, taxonomy, and dependency rules, see [**Module Boundaries & Dependency Rules**](MODULE_BOUNDARIES.md).
+
 ---
 
 ## 1. High-Level Modular-Monolith Architecture

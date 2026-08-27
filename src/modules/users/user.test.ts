@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'bun:test'
 import { UserService } from './user.service'
 import type { IUserRepository, FindAllUsersParams } from './user.repository'
-import type { IAuditLogRepository } from '@/modules/audit-logs/audit-log.repository'
+import type { IAuditLogRepository } from '@/modules/audit-logs'
 import { Role, UserStatus, type User, type Prisma } from '@prisma/client'
 import { HTTPException } from 'hono/http-exception'
 import { UserController } from './user.controller'

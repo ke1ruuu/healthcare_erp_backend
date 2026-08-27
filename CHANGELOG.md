@@ -8,6 +8,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## Releases
 
+### [v1.0.2](changelogs/v1.0.2.md) — 2026-08-27
+- **Architecture**: Formalized Modular-Monolith and Domain-Module architecture with strict 4-tier layer isolation (Application Service, Repository, Controller, DTO).
+- **Module Boundaries & Ownerships**: Defined domain taxonomy, single-source-of-truth ownership matrix, and unidirectional dependency rules in `docs/MODULE_BOUNDARIES.md`.
+- **Cross-Module Communication**: Established public module API barrels (`index.ts`) and asynchronous domain event bus (`src/shared/events/event-bus.ts`).
+- **Import Boundary Enforcement**: Implemented automated static analyzer `scripts/check-boundaries.ts` (`bun run check:boundaries`) blocking uncontrolled cross-module imports.
+- **Shared Kernel & Utility Boundaries**: Defined domain-agnostic responsibilities in `src/shared/` and pure common utility rules.
+- **API Documentation**: Integrated interactive Swagger UI (`/docs`, `/swagger`) and OpenAPI 3.1 JSON specification (`/docs/openapi.json`).
+- **Domain Implementation**: Built Patients domain module (`src/modules/patients/`) with full test coverage.
+
 ### [v1.0.1](changelogs/v1.0.1.md) — 2026-08-27
 - **Project Setup**: Initialized Bun runtime and TypeScript configuration with `@/*` path aliases.
 - **Web Framework**: Configured Hono with CORS, Logger, Secure Headers, Pretty JSON, and global error handlers.

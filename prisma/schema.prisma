@@ -26,6 +26,25 @@ enum UserStatus {
   SUSPENDED
 }
 
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+  UNKNOWN
+}
+
+enum BloodType {
+  A_POSITIVE
+  A_NEGATIVE
+  B_POSITIVE
+  B_NEGATIVE
+  AB_POSITIVE
+  AB_NEGATIVE
+  O_POSITIVE
+  O_NEGATIVE
+  UNKNOWN
+}
+
 model User {
   id           String      @id @default(uuid())
   email        String      @unique
@@ -45,6 +64,29 @@ model User {
   @@index([email])
   @@index([role])
   @@map("users")
+}
+
+model Patient {
+  id                    String      @id @default(uuid())
+  medicalRecordNumber   String      @unique @map("medical_record_number")
+  firstName             String      @map("first_name")
+  lastName              String      @map("last_name")
+  email                 String?     @map("email")
+  phoneNumber           String?     @map("phone_number")
+  dateOfBirth           DateTime    @map("date_of_birth")
+  gender                Gender      @default(UNKNOWN)
+  bloodType             BloodType   @default(UNKNOWN) @map("blood_type")
+  address               String?     @map("address")
+  emergencyContactName  String?     @map("emergency_contact_name")
+  emergencyContactPhone String?     @map("emergency_contact_phone")
+  createdAt             DateTime    @default(now()) @map("created_at")
+  updatedAt             DateTime    @updatedAt @map("updated_at")
+  deletedAt             DateTime?   @map("deleted_at")
+
+  @@index([medicalRecordNumber])
+  @@index([firstName, lastName])
+  @@index([email])
+  @@map("patients")
 }
 
 model AuditLog {

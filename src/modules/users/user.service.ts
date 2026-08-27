@@ -7,7 +7,7 @@ import {
 import {
   type IAuditLogRepository,
   auditLogRepository,
-} from '@/modules/audit-logs/audit-log.repository'
+} from '@/modules/audit-logs'
 import type {
   CreateUserDto,
   UpdateUserDto,

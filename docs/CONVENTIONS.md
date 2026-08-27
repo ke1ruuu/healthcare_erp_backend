@@ -38,6 +38,7 @@ src/
 │   └── error.middleware.ts
 ├── modules/                    # Autonomous Domain Modules
 │   ├── auth/
+│   │   ├── index.ts            # Public API barrel (Exports service, route, public DTOs)
 │   │   ├── auth.route.ts       # API routing & endpoint definitions
 │   │   ├── auth.controller.ts  # HTTP controller (request/response orchestration)
 │   │   ├── auth.service.ts     # Application Service (business logic)
@@ -45,6 +46,7 @@ src/
 │   │   ├── auth.dto.ts         # Zod schemas & TypeScript DTO types
 │   │   └── auth.test.ts        # Domain module unit & integration tests
 │   ├── patients/
+│   │   ├── index.ts            # Public API barrel
 │   │   ├── patient.route.ts
 │   │   ├── patient.controller.ts
 │   │   ├── patient.service.ts
