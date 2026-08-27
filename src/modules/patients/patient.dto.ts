@@ -1,9 +1,21 @@
 import { z } from 'zod'
 import { Gender, BloodType } from '@prisma/client'
-import { paginationQuerySchema } from '@/shared/types/pagination.type'
+import { baseQuerySchema } from '@/shared/types/pagination.type'
 
 export const genderEnumSchema = z.nativeEnum(Gender)
 export const bloodTypeEnumSchema = z.nativeEnum(BloodType)
+
+export const PATIENT_SORTABLE_FIELDS = [
+  'createdAt',
+  'updatedAt',
+  'firstName',
+  'lastName',
+  'dateOfBirth',
+  'medicalRecordNumber',
+  'gender',
+  'bloodType',
+] as const
+export type PatientSortableField = (typeof PATIENT_SORTABLE_FIELDS)[number]
 
 export const createPatientSchema = z.object({
   firstName: z.string().min(1, 'First name is required'),
@@ -21,7 +33,7 @@ export const createPatientSchema = z.object({
 
 export const updatePatientSchema = createPatientSchema.partial()
 
-export const patientQuerySchema = paginationQuerySchema.extend({
+export const patientQuerySchema = baseQuerySchema.extend({
   gender: genderEnumSchema.optional(),
   bloodType: bloodTypeEnumSchema.optional(),
 })

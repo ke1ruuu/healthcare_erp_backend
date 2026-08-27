@@ -14,7 +14,14 @@ describe('Standardized Response Formatting Utilities', () => {
   app.get('/success', (c) => sendSuccess(c, { user: 'John Doe' }, 'Fetched user'))
   app.post('/created', (c) => sendCreated(c, { id: 'patient-123' }, 'Patient record created'))
   app.get('/paginated', (c) =>
-    sendPaginated(c, [{ id: 1 }, { id: 2 }], { page: 1, limit: 10, total: 2, totalPages: 1 })
+    sendPaginated(c, [{ id: 1 }, { id: 2 }], {
+      page: 1,
+      limit: 10,
+      total: 2,
+      totalPages: 1,
+      hasNextPage: false,
+      hasPreviousPage: false,
+    })
   )
   app.delete('/no-content', (c) => sendNoContent(c, 'Resource deleted'))
   app.get('/custom-error', (c) =>

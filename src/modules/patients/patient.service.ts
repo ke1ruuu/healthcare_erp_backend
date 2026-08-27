@@ -9,6 +9,7 @@ import {
 } from '@/modules/audit-logs'
 import { eventBus, EventBus } from '@/shared/events/event-bus'
 import { NotFoundException, ConflictException } from '@/shared/exceptions/app.exception'
+import { parsePagination, buildPaginationMeta } from '@/shared/utils/query.util'
 import type {
   CreatePatientDto,
   UpdatePatientDto,
@@ -55,33 +56,32 @@ export class PatientService {
     patients: PatientResponseDto[]
     meta: PaginationMeta
   }> {
-    const page = query.page ?? 1
-    const limit = query.limit ?? 20
-    const skip = (page - 1) * limit
+    const { skip, take, page, limit } = parsePagination(query)
 
     const [patients, total] = await Promise.all([
       this.patientRepo.findAll({
         skip,
-        take: limit,
+        take,
         gender: query.gender,
         bloodType: query.bloodType,
         search: query.search,
+        sortBy: query.sortBy as any,
+        sortOrder: query.sortOrder as any,
+        startDate: query.startDate,
+        endDate: query.endDate,
       }),
       this.patientRepo.count({
         gender: query.gender,
         bloodType: query.bloodType,
         search: query.search,
+        startDate: query.startDate,
+        endDate: query.endDate,
       }),
     ])
 
     return {
       patients: patients.map((p) => this.sanitizePatient(p)),
-      meta: {
-        page,
-        limit,
-        total,
-        totalPages: Math.ceil(total / limit) || 1,
-      },
+      meta: buildPaginationMeta(total, page, limit),
     }
   }
 

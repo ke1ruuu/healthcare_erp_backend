@@ -1,8 +1,20 @@
 import { z } from 'zod'
 import { Role, UserStatus } from '@prisma/client'
+import { baseQuerySchema } from '@/shared/types/pagination.type'
 
 export const roleEnumSchema = z.nativeEnum(Role)
 export const userStatusEnumSchema = z.nativeEnum(UserStatus)
+
+export const USER_SORTABLE_FIELDS = [
+  'createdAt',
+  'updatedAt',
+  'firstName',
+  'lastName',
+  'email',
+  'role',
+  'status',
+] as const
+export type UserSortableField = (typeof USER_SORTABLE_FIELDS)[number]
 
 export const createUserSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -22,12 +34,9 @@ export const updateUserSchema = createUserSchema
     password: z.string().min(8, 'Password must be at least 8 characters long').optional(),
   })
 
-export const userQuerySchema = z.object({
-  page: z.coerce.number().int().positive().default(1),
-  limit: z.coerce.number().int().positive().max(100).default(20),
+export const userQuerySchema = baseQuerySchema.extend({
   role: roleEnumSchema.optional(),
   status: userStatusEnumSchema.optional(),
-  search: z.string().optional(),
 })
 
 export type CreateUserDto = z.infer<typeof createUserSchema>

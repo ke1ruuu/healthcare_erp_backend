@@ -71,7 +71,7 @@ Voice in existing documentation is plain engineering prose: precise, unhyped, co
 - Real seeded staff and patient records via `bun run db:seed`.
 - Real machine-checked governance results: `scripts/check-boundaries.ts` and `scripts/check-api-drift.ts` produce genuine pass/fail output. The current dashboard hardcodes "Enforced (Zero Violations)" and "Clean (100% Backward-Compatible)" as strings inside the telemetry route — these are **claims not currently derived from running the checks**, and future work must not present them as verified results unless they are wired to the actual scripts.
 - Real OpenAPI 3.1 specification at `/docs/openapi.json`.
-- `dashboard/src/assets/hero.png` is Vite scaffold residue, not a product asset.
+- `dashboard/src/assets/hero.png` and `dashboard/public/favicon.svg` are Vite scaffold residue, not product assets. The favicon is a violet/cyan blurred mark in precisely the palette the redesign removes, and needs replacing alongside the visual world.
 
 **Must not be fabricated:** patient data presented as real people, uptime or latency figures, test coverage numbers, performance benchmarks, user counts, compliance certifications (HIPAA/GDPR conformance is not established), or deployment/production claims. The system has never run in production.
 

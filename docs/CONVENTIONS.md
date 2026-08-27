@@ -220,11 +220,14 @@ All API responses strictly adhere to unified JSON envelope schemas defined in `s
     { "id": "2", "name": "Bob" }
   ],
   "meta": {
-    "page": 1,
+    "page": 2,
     "limit": 20,
-    "total": 150,
-    "totalPages": 8
+    "total": 55,
+    "totalPages": 3,
+    "hasNextPage": true,
+    "hasPreviousPage": true
   },
+  "requestId": "9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d",
   "timestamp": "2026-08-27T12:30:00.000Z"
 }
 ```
@@ -248,6 +251,18 @@ All API responses strictly adhere to unified JSON envelope schemas defined in `s
   "path": "/api/v1/patients"
 }
 ```
+
+### Pagination, Filtering, Sorting & Searching Standards
+
+All listing endpoints (`GET /api/v1/<domain>`) adhere to standard query parameter rules provided by `@/shared/types/pagination.type` and `@/shared/utils/query.util`:
+
+| Concern | Query Parameters | Default | Description & Example |
+|---|---|---|---|
+| **Pagination** | `page`, `limit` | `page=1`, `limit=20` | 1-indexed pagination. Max `limit=100`. Example: `?page=2&limit=25` |
+| **Sorting** | `sortBy`, `sortOrder` | `sortBy=createdAt`, `sortOrder=desc` | Validated against domain whitelist (`USER_SORTABLE_FIELDS`, `PATIENT_SORTABLE_FIELDS`). `sortOrder`: `asc` or `desc`. Example: `?sortBy=lastName&sortOrder=asc` |
+| **Searching** | `search` | None | Sanitized string matched case-insensitively across multi-column text fields (e.g. name, email, MRN). Example: `?search=doe` |
+| **Date Range** | `startDate`, `endDate` | None | Supports `YYYY-MM-DD` and ISO 8601 strings. Bounds clamped to end of day. Example: `?startDate=2026-01-01&endDate=2026-06-30` |
+| **Domain Filters** | Status, Role, Gender, etc. | None | Strongly typed enum filters. Example: `?status=ACTIVE&gender=FEMALE` |
 
 ### Request Correlation IDs (`X-Request-ID`) & Structured Logging
 - **Correlation Header**: Every incoming request is stamped with a UUID `X-Request-ID` and `X-Correlation-ID` header. If passed by the client or API gateway, the existing ID is preserved; otherwise, a cryptographically secure UUID is generated.

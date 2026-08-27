@@ -1,5 +1,8 @@
 import { type User, type Prisma, Role, UserStatus } from '@prisma/client'
 import { prisma } from '@/db/prisma'
+import { parseSorting, parseSearch, parseDateRange } from '@/shared/utils/query.util'
+import { USER_SORTABLE_FIELDS, type UserSortableField } from './user.dto'
+import type { SortOrder } from '@/shared/types/pagination.type'
 
 export interface FindAllUsersParams {
   skip?: number
@@ -7,6 +10,10 @@ export interface FindAllUsersParams {
   role?: Role
   status?: UserStatus
   search?: string
+  sortBy?: UserSortableField
+  sortOrder?: SortOrder
+  startDate?: string
+  endDate?: string
 }
 
 export interface IUserRepository {
@@ -21,24 +28,15 @@ export interface IUserRepository {
 
 export class UserRepository implements IUserRepository {
   private buildWhereClause(params: FindAllUsersParams): Prisma.UserWhereInput {
+    const searchCondition = parseSearch(params.search, ['firstName', 'lastName', 'email', 'phoneNumber'])
+    const dateCondition = parseDateRange(params.startDate, params.endDate, 'createdAt')
+
     const where: Prisma.UserWhereInput = {
       deletedAt: null,
-    }
-
-    if (params.role) {
-      where.role = params.role
-    }
-
-    if (params.status) {
-      where.status = params.status
-    }
-
-    if (params.search) {
-      where.OR = [
-        { firstName: { contains: params.search, mode: 'insensitive' } },
-        { lastName: { contains: params.search, mode: 'insensitive' } },
-        { email: { contains: params.search, mode: 'insensitive' } },
-      ]
+      ...(params.role && { role: params.role }),
+      ...(params.status && { status: params.status }),
+      ...searchCondition,
+      ...dateCondition,
     }
 
     return where
@@ -58,11 +56,18 @@ export class UserRepository implements IUserRepository {
 
   async findAll(params: FindAllUsersParams): Promise<User[]> {
     const where = this.buildWhereClause(params)
+    const orderBy = parseSorting<UserSortableField>(
+      { sortBy: params.sortBy, sortOrder: params.sortOrder },
+      USER_SORTABLE_FIELDS,
+      'createdAt',
+      'desc'
+    )
+
     return prisma.user.findMany({
       where,
       skip: params.skip ?? 0,
       take: params.take ?? 20,
-      orderBy: { createdAt: 'desc' },
+      orderBy,
     })
   }
 

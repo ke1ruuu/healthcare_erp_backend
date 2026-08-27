@@ -8,6 +8,8 @@ import {
   auditLogRepository,
 } from '@/modules/audit-logs'
 import { NotFoundException, ConflictException } from '@/shared/exceptions/app.exception'
+import { parsePagination, buildPaginationMeta } from '@/shared/utils/query.util'
+import type { PaginationMeta } from '@/shared/types/pagination.type'
 import type {
   CreateUserDto,
   UpdateUserDto,
@@ -36,40 +38,34 @@ export class UserService {
 
   async listUsers(query: UserQueryDto): Promise<{
     users: UserResponseDto[]
-    meta: {
-      page: number
-      limit: number
-      total: number
-      totalPages: number
-    }
+    meta: PaginationMeta
   }> {
-    const page = query.page ?? 1
-    const limit = query.limit ?? 20
-    const skip = (page - 1) * limit
+    const { skip, take, page, limit } = parsePagination(query)
 
     const [users, total] = await Promise.all([
       this.userRepo.findAll({
         skip,
-        take: limit,
+        take,
         role: query.role,
         status: query.status,
         search: query.search,
+        sortBy: query.sortBy as any,
+        sortOrder: query.sortOrder as any,
+        startDate: query.startDate,
+        endDate: query.endDate,
       }),
       this.userRepo.count({
         role: query.role,
         status: query.status,
         search: query.search,
+        startDate: query.startDate,
+        endDate: query.endDate,
       }),
     ])
 
     return {
       users: users.map((user) => this.sanitizeUser(user)),
-      meta: {
-        page,
-        limit,
-        total,
-        totalPages: Math.ceil(total / limit) || 1,
-      },
+      meta: buildPaginationMeta(total, page, limit),
     }
   }
 
