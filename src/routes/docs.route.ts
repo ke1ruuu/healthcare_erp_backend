@@ -5,9 +5,9 @@ export const openApiSpec = {
   openapi: '3.1.0',
   info: {
     title: 'Healthcare ERP Backend API',
-    version: '1.0.1',
+    version: '1.0.2',
     description:
-      'Enterprise Resource Planning (ERP) Backend API for healthcare systems, hospitals, and clinics. Built with Bun, Hono, and Prisma ORM following a Modular-Monolith architecture.',
+      'Enterprise Resource Planning (ERP) Backend API for healthcare systems, hospitals, and clinics. Built with Bun, Hono, and Prisma ORM following a Modular-Monolith architecture with 4-tier layer isolation, strict domain boundaries, URI versioning (/api/v1), and live telemetry monitoring.',
     contact: {
       name: 'Healthcare ERP Engineering Team',
     },
@@ -19,9 +19,9 @@ export const openApiSpec = {
     },
   ],
   tags: [
-    { name: 'System & Health', description: 'System health checks, diagnostics, and metadata' },
-    { name: 'Users Domain', description: 'Staff accounts, credentials, and role management' },
-    { name: 'Patients Domain', description: 'Master Patient Index (MPI), demographics, and records' },
+    { name: 'System & Health', description: 'System health checks, diagnostics, metadata & live telemetry' },
+    { name: 'Users Domain', description: 'Staff accounts, credentials, and role management (/api/v1/users)' },
+    { name: 'Patients Domain', description: 'Master Patient Index (MPI), demographics, and records (/api/v1/patients)' },
   ],
   components: {
     securitySchemes: {
@@ -205,10 +205,13 @@ export const openApiSpec = {
                   type: 'object',
                   properties: {
                     name: { type: 'string', example: 'Healthcare ERP Backend API' },
-                    version: { type: 'string', example: '1.0.1' },
+                    version: { type: 'string', example: '1.0.2' },
                     environment: { type: 'string', example: 'development' },
-                    status: { type: 'string', example: 'active' },
-                    documentation: { type: 'string', example: '/docs' },
+                    status: { type: 'string', example: 'operational' },
+                    dashboard: { type: 'string', example: '/dashboard' },
+                    documentation: { type: 'object' },
+                    healthCheck: { type: 'string', example: '/health' },
+                    versions: { type: 'object' },
                   },
                 },
               },

@@ -194,39 +194,65 @@ All files must follow **`kebab-case`** with a descriptive role suffix:
 
 ### Standardized JSON Response Envelope
 
-#### 1. Success Response Format
+All API responses strictly adhere to unified JSON envelope schemas defined in `src/shared/types/response.type.ts`:
+
+#### 1. Success Response Format (`sendSuccess`, `sendCreated`)
 ```json
 {
   "success": true,
   "data": {
     "id": "c8f2e219-5d46-4e59-9943-7ec41d8e1e77",
+    "medicalRecordNumber": "MRN-20260827-4821",
     "firstName": "John",
     "lastName": "Doe"
   },
   "message": "Patient created successfully",
+  "timestamp": "2026-08-27T12:30:00.000Z"
+}
+```
+
+#### 2. Paginated Response Format (`sendPaginated`)
+```json
+{
+  "success": true,
+  "data": [
+    { "id": "1", "name": "Alice" },
+    { "id": "2", "name": "Bob" }
+  ],
   "meta": {
     "page": 1,
     "limit": 20,
     "total": 150,
     "totalPages": 8
-  }
+  },
+  "timestamp": "2026-08-27T12:30:00.000Z"
 }
 ```
 
-#### 2. Error Response Format
+#### 3. Standardized Error Response Format (`sendError` & `errorHandler`)
 ```json
 {
   "success": false,
   "status": 400,
-  "message": "Validation failed",
+  "code": "VALIDATION_ERROR",
+  "message": "Request validation failed",
   "errors": [
     {
       "field": "email",
-      "message": "Invalid email address format"
+      "message": "Invalid email address format",
+      "code": "invalid_string"
     }
-  ]
+  ],
+  "timestamp": "2026-08-27T12:30:00.000Z",
+  "path": "/api/v1/patients"
 }
 ```
+
+### Request Validation Rules (`validateBody`, `validateQuery`, `validateParam`)
+- **Body Validation**: Attach `validateBody(schema)` middleware on `POST` and `PATCH` routes. Validated payload is accessible via `c.get('validatedBody')`.
+- **Query Validation**: Attach `validateQuery(schema)` middleware on `GET` listing routes.
+- **Parameter Validation**: Attach `validateParam(schema)` middleware on routes with dynamic parameters (e.g. UUID, MRN).
+- **Exceptions**: Domain services throw typed `AppException` subclasses (`NotFoundException`, `ConflictException`, `UnauthorizedException`, `ForbiddenException`, `ValidationException`), which are caught and formatted automatically by the global `errorHandler`.
 
 ---
 

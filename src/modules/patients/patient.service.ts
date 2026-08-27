@@ -1,4 +1,3 @@
-import { HTTPException } from 'hono/http-exception'
 import { type Patient, type Prisma, Gender, BloodType } from '@prisma/client'
 import {
   type IPatientRepository,
@@ -9,6 +8,7 @@ import {
   auditLogRepository,
 } from '@/modules/audit-logs'
 import { eventBus, EventBus } from '@/shared/events/event-bus'
+import { NotFoundException, ConflictException } from '@/shared/exceptions/app.exception'
 import type {
   CreatePatientDto,
   UpdatePatientDto,
@@ -38,7 +38,7 @@ export class PatientService {
   async getPatientById(id: string): Promise<PatientResponseDto> {
     const patient = await this.patientRepo.findById(id)
     if (!patient) {
-      throw new HTTPException(404, { message: 'Patient not found' })
+      throw new NotFoundException(`Patient with ID '${id}' not found`)
     }
     return this.sanitizePatient(patient)
   }
@@ -46,7 +46,7 @@ export class PatientService {
   async getPatientByMRN(mrn: string): Promise<PatientResponseDto> {
     const patient = await this.patientRepo.findByMRN(mrn)
     if (!patient) {
-      throw new HTTPException(404, { message: 'Patient with this MRN not found' })
+      throw new NotFoundException(`Patient with MRN '${mrn}' not found`)
     }
     return this.sanitizePatient(patient)
   }
@@ -94,9 +94,7 @@ export class PatientService {
     if (mrn) {
       const existingMRN = await this.patientRepo.findByMRN(mrn)
       if (existingMRN) {
-        throw new HTTPException(409, {
-          message: 'A patient with this Medical Record Number already exists',
-        })
+        throw new ConflictException('A patient with this Medical Record Number already exists')
       }
     } else {
       mrn = this.generateMRN()
@@ -105,9 +103,7 @@ export class PatientService {
     if (data.email) {
       const existingEmail = await this.patientRepo.findByEmail(data.email)
       if (existingEmail) {
-        throw new HTTPException(409, {
-          message: 'A patient with this email address already exists',
-        })
+        throw new ConflictException('A patient with this email address already exists')
       }
     }
 
@@ -158,15 +154,13 @@ export class PatientService {
   ): Promise<PatientResponseDto> {
     const existing = await this.patientRepo.findById(id)
     if (!existing) {
-      throw new HTTPException(404, { message: 'Patient not found' })
+      throw new NotFoundException(`Patient with ID '${id}' not found`)
     }
 
     if (data.email && data.email !== existing.email) {
       const emailInUse = await this.patientRepo.findByEmail(data.email)
       if (emailInUse) {
-        throw new HTTPException(409, {
-          message: 'A patient with this email address already exists',
-        })
+        throw new ConflictException('A patient with this email address already exists')
       }
     }
 
@@ -212,7 +206,7 @@ export class PatientService {
   async deletePatient(id: string, actorId?: string): Promise<void> {
     const existing = await this.patientRepo.findById(id)
     if (!existing) {
-      throw new HTTPException(404, { message: 'Patient not found' })
+      throw new NotFoundException(`Patient with ID '${id}' not found`)
     }
 
     await this.patientRepo.softDelete(id)

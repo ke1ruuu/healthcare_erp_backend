@@ -1,13 +1,12 @@
 import type { Context } from 'hono'
 import type { ContentfulStatusCode } from 'hono/utils/http-status'
 import type { PaginationMeta } from '@/shared/types/pagination.type'
-
-export interface StandardSuccessResponse<T> {
-  success: true
-  data: T
-  message?: string
-  meta?: PaginationMeta
-}
+import type {
+  ApiSuccessResponse,
+  ApiPaginatedResponse,
+  ApiErrorResponse,
+  FieldErrorDetail,
+} from '@/shared/types/response.type'
 
 export const sendSuccess = <T>(
   c: Context,
@@ -15,14 +14,13 @@ export const sendSuccess = <T>(
   message?: string,
   status: ContentfulStatusCode = 200
 ) => {
-  return c.json(
-    {
-      success: true,
-      data,
-      ...(message && { message }),
-    },
-    status
-  )
+  const payload: ApiSuccessResponse<T> = {
+    success: true,
+    data,
+    ...(message && { message }),
+    timestamp: new Date().toISOString(),
+  }
+  return c.json(payload, status)
 }
 
 export const sendCreated = <T>(
@@ -39,15 +37,14 @@ export const sendPaginated = <T>(
   meta: PaginationMeta,
   message?: string
 ) => {
-  return c.json(
-    {
-      success: true,
-      data,
-      meta,
-      ...(message && { message }),
-    },
-    200
-  )
+  const payload: ApiPaginatedResponse<T> = {
+    success: true,
+    data,
+    meta,
+    ...(message && { message }),
+    timestamp: new Date().toISOString(),
+  }
+  return c.json(payload, 200)
 }
 
 export const sendNoContent = (c: Context, message = 'Operation completed successfully') => {
@@ -55,7 +52,27 @@ export const sendNoContent = (c: Context, message = 'Operation completed success
     {
       success: true,
       message,
+      timestamp: new Date().toISOString(),
     },
     200
   )
+}
+
+export const sendError = (
+  c: Context,
+  status: ContentfulStatusCode = 500,
+  message = 'An error occurred',
+  code = 'INTERNAL_ERROR',
+  errors?: FieldErrorDetail[]
+) => {
+  const payload: ApiErrorResponse = {
+    success: false,
+    status,
+    code,
+    message,
+    ...(errors && errors.length > 0 && { errors }),
+    timestamp: new Date().toISOString(),
+    path: c.req.path,
+  }
+  return c.json(payload, status)
 }

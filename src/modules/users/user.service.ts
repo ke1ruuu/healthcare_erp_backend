@@ -1,4 +1,3 @@
-import { HTTPException } from 'hono/http-exception'
 import type { User, Prisma } from '@prisma/client'
 import {
   type IUserRepository,
@@ -8,6 +7,7 @@ import {
   type IAuditLogRepository,
   auditLogRepository,
 } from '@/modules/audit-logs'
+import { NotFoundException, ConflictException } from '@/shared/exceptions/app.exception'
 import type {
   CreateUserDto,
   UpdateUserDto,
@@ -29,7 +29,7 @@ export class UserService {
   async getUserById(id: string): Promise<UserResponseDto> {
     const user = await this.userRepo.findById(id)
     if (!user) {
-      throw new HTTPException(404, { message: 'User not found' })
+      throw new NotFoundException(`User with ID '${id}' not found`)
     }
     return this.sanitizeUser(user)
   }
@@ -76,9 +76,7 @@ export class UserService {
   async createUser(data: CreateUserDto, actorId?: string): Promise<UserResponseDto> {
     const existing = await this.userRepo.findByEmail(data.email)
     if (existing) {
-      throw new HTTPException(409, {
-        message: 'A user with this email address already exists',
-      })
+      throw new ConflictException('A user with this email address already exists')
     }
 
     const passwordHash = await Bun.password.hash(data.password, {
@@ -122,15 +120,13 @@ export class UserService {
   ): Promise<UserResponseDto> {
     const existing = await this.userRepo.findById(id)
     if (!existing) {
-      throw new HTTPException(404, { message: 'User not found' })
+      throw new NotFoundException(`User with ID '${id}' not found`)
     }
 
     if (data.email && data.email !== existing.email) {
       const emailInUse = await this.userRepo.findByEmail(data.email)
       if (emailInUse) {
-        throw new HTTPException(409, {
-          message: 'A user with this email address already exists',
-        })
+        throw new ConflictException('A user with this email address already exists')
       }
     }
 
@@ -168,7 +164,7 @@ export class UserService {
   async deleteUser(id: string, actorId?: string): Promise<void> {
     const existing = await this.userRepo.findById(id)
     if (!existing) {
-      throw new HTTPException(404, { message: 'User not found' })
+      throw new NotFoundException(`User with ID '${id}' not found`)
     }
 
     await this.userRepo.softDelete(id)

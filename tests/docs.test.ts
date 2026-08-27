@@ -14,6 +14,7 @@ describe('Swagger UI & OpenAPI Documentation', () => {
     const spec = await res.json()
     expect(spec.openapi).toBe('3.1.0')
     expect(spec.info.title).toBe('Healthcare ERP Backend API')
+    expect(spec.info.version).toBe('1.0.2')
     expect(spec.paths).toBeDefined()
     expect(spec.paths['/health']).toBeDefined()
     expect(spec.paths['/api/v1/users']).toBeDefined()

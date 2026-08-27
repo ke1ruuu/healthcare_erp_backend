@@ -4,7 +4,7 @@ import type { IPatientRepository, FindAllPatientsParams } from './patient.reposi
 import type { IAuditLogRepository } from '@/modules/audit-logs'
 import { EventBus } from '@/shared/events/event-bus'
 import { Gender, BloodType, type Patient, type Prisma } from '@prisma/client'
-import { HTTPException } from 'hono/http-exception'
+import { NotFoundException, ConflictException } from '@/shared/exceptions/app.exception'
 import { PatientController } from './patient.controller'
 import { Hono } from 'hono'
 import { errorHandler } from '@/middlewares/error.middleware'
@@ -145,7 +145,7 @@ describe('Patients Domain Module - Application Service (Unit Tests)', () => {
         medicalRecordNumber: 'MRN-FIXED-0001',
         dateOfBirth: new Date('1988-02-02'),
       })
-    ).rejects.toThrow(HTTPException)
+    ).rejects.toThrow(ConflictException)
   })
 
   it('should throw 404 Not Found when looking up non-existent patient', async () => {
@@ -153,7 +153,7 @@ describe('Patients Domain Module - Application Service (Unit Tests)', () => {
     const mockAudit = new MockAuditLogRepository()
     const service = new PatientService(mockRepo, mockAudit)
 
-    await expect(service.getPatientById('non-existent-id')).rejects.toThrow(HTTPException)
+    await expect(service.getPatientById('non-existent-id')).rejects.toThrow(NotFoundException)
   })
 })
 

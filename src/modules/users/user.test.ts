@@ -3,7 +3,7 @@ import { UserService } from './user.service'
 import type { IUserRepository, FindAllUsersParams } from './user.repository'
 import type { IAuditLogRepository } from '@/modules/audit-logs'
 import { Role, UserStatus, type User, type Prisma } from '@prisma/client'
-import { HTTPException } from 'hono/http-exception'
+import { NotFoundException, ConflictException } from '@/shared/exceptions/app.exception'
 import { UserController } from './user.controller'
 import { Hono } from 'hono'
 import { errorHandler } from '@/middlewares/error.middleware'
@@ -133,7 +133,7 @@ describe('Users Domain Module - Application Service (Unit Tests)', () => {
         role: Role.NURSE,
         status: UserStatus.ACTIVE,
       })
-    ).rejects.toThrow(HTTPException)
+    ).rejects.toThrow(ConflictException)
   })
 
   it('should throw 404 Not Found when retrieving non-existent user', async () => {
@@ -141,7 +141,7 @@ describe('Users Domain Module - Application Service (Unit Tests)', () => {
     const mockAudit = new MockAuditLogRepository()
     const service = new UserService(mockRepo, mockAudit)
 
-    await expect(service.getUserById('non-existent-id')).rejects.toThrow(HTTPException)
+    await expect(service.getUserById('non-existent-id')).rejects.toThrow(NotFoundException)
   })
 
   it('should list users with pagination metadata', async () => {
