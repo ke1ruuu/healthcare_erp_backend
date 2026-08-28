@@ -1,4 +1,4 @@
-import type { User, Prisma } from '@prisma/client'
+import { type User, type Prisma, Role, UserStatus } from '@prisma/client'
 import {
   type IUserRepository,
   userRepository,
@@ -85,10 +85,10 @@ export class UserService {
       passwordHash,
       firstName: data.firstName,
       lastName: data.lastName,
-      role: data.role,
-      status: data.status,
-      phoneNumber: data.phoneNumber,
-      avatarUrl: data.avatarUrl,
+      role: data.role ?? Role.RECEPTIONIST,
+      status: data.status ?? UserStatus.ACTIVE,
+      phoneNumber: data.phoneNumber || null,
+      avatarUrl: data.avatarUrl || null,
     }
 
     const user = await this.userRepo.create(createInput)

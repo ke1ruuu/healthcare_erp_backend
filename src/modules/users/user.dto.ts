@@ -39,8 +39,8 @@ export const userQuerySchema = baseQuerySchema.extend({
   status: userStatusEnumSchema.optional(),
 })
 
-export type CreateUserDto = z.infer<typeof createUserSchema>
-export type UpdateUserDto = z.infer<typeof updateUserSchema>
+export type CreateUserDto = z.input<typeof createUserSchema>
+export type UpdateUserDto = z.input<typeof updateUserSchema>
 export type UserQueryDto = z.infer<typeof userQuerySchema>
 
 export interface UserResponseDto {

@@ -232,6 +232,109 @@ Every stateful domain model must manage lifecycle states through strongly typed 
 
 ---
 
+### 5.5 Foreign-Key Constraints & Referential Action Conventions
+
+Foreign-key constraints enforce relational integrity at the PostgreSQL engine level. Every cross-table relation in Prisma must explicitly specify `onDelete` and `onUpdate` referential actions according to its clinical safety class:
+
+1. **`SetNull` (Forensic & Audit Actor References)**:
+   - Applied to historical tracking columns where the referenced record may be decommissioned, but the audit entry itself is legally immutable.
+   - Example: `AuditLog.userId` referencing `User.id` with `onDelete: SetNull`.
+   - Result: If a user record is removed, `user_id` becomes `NULL`, preserving the immutable timestamp, action, entity, IP address, and payload history.
+
+2. **`Restrict` / `NoAction` (Clinical & Financial Data Protection)**:
+   - Default policy for relational models where deleting the parent would cause medical or financial inconsistency.
+   - Example: `Patient` cannot be removed if referenced by active `Prescription`, `Appointment`, or `Invoice` records.
+   - Result: PostgreSQL rejects any deletion attempt, raising foreign-key violation `P2003` until child records are systematically archived or reassigned.
+
+3. **`Cascade` (Strict Sub-Entity / Line-Item Composition)**:
+   - Permitted exclusively for tightly coupled child records that have no independent clinical existence outside their aggregate root.
+   - Example: `InvoiceItem` on `Invoice`, `PrescriptionItem` on `Prescription`.
+   - Result: Deleting the parent invoice automatically removes its associated line items.
+
+4. **Foreign Key Column Naming Standard**:
+   - Always formatted as `camelCase` `<parentEntity>Id` in Prisma, mapped to `snake_case` `<parent_entity>_id` in PostgreSQL:
+     ```prisma
+     userId    String?  @map("user_id")
+     patientId String   @map("patient_id")
+     ```
+
+---
+
+### 5.6 Soft-Delete Strategy & Retention Lifecycle
+
+In compliance with healthcare regulations (HIPAA Security Rule §164.312, 21 CFR Part 11, and GDPR Article 17 clinical exemptions), **production medical and operational records must never be hard-deleted from PostgreSQL tables**.
+
+1. **Soft-Delete Implementation**:
+   - Every stateful model includes a nullable timestamp:
+     ```prisma
+     deletedAt DateTime? @map("deleted_at")
+     ```
+   - Soft-delete operations update the record timestamp rather than executing SQL `DELETE`:
+     ```ts
+     await prisma.patient.update({
+       where: { id },
+       data: { deletedAt: new Date() },
+     })
+     ```
+2. **Active Record Filtering Standard**:
+   - All repository `find*`, `count`, and search methods must enforce active state filtering:
+     ```ts
+     where: { deletedAt: null, ...otherFilters }
+     ```
+3. **Audit & Event Emission**:
+   - Performing a soft delete must record an entry in `audit_logs` (`action: "DELETE_<ENTITY>"`) and publish a domain event (`<entity>:deleted`).
+4. **Entity Classification Matrix**:
+   | Entity Class | Strategy | Examples | Rationale |
+   |---|---|---|---|
+   | **Clinical & Master Data** | **Soft-Delete** (`deletedAt`) | `User`, `Patient`, `Doctor`, `Appointment`, `Prescription`, `Invoice` | Regulatory provenance and legal medical audit retention. |
+   | **Audit & Ledger Logs** | **Append-Only** (No Deletion) | `AuditLog`, `LedgerEntry`, `SecurityEvent` | Tamper-evident forensics; rows are permanently immutable. |
+   | **Ephemeral & Sessions** | **Hard-Delete** (Physical Removal) | Verification codes, password reset tokens, rate-limit buckets | Security minimization of temporary credentials. |
+
+---
+
+### 5.7 Indexing Conventions & Performance Optimization
+
+To guarantee sub-millisecond query execution across large patient databases, all PostgreSQL indexes must adhere to systematic conventions:
+
+1. **Primary Key Indexes**:
+   - Automatically generated unique B-Tree index on `id` (`UUID v4`).
+2. **Foreign Key Indexes**:
+   - **Mandatory**: Every foreign key column must have an explicit `@@index([foreignKey])`.
+   - Eliminates table scans during SQL `JOIN`s and foreign-key referential checks:
+     ```prisma
+     @@index([userId])
+     @@index([patientId])
+     ```
+3. **Soft-Delete & Status Indexes**:
+   - Dedicated indexes on filtering predicates:
+     ```prisma
+     @@index([deletedAt])
+     @@index([status])
+     ```
+4. **Composite Query Indexes**:
+   - Multi-column indexes constructed in order of query cardinality:
+     - Multi-column patient lookup: `@@index([firstName, lastName])`
+     - Audit log entity targeting: `@@index([entity, entityId])`
+     - Chronological sorting: `@@index([createdAt])`
+5. **Index Naming & Engine Storage**:
+   - Managed via Prisma schema and translated to standard PostgreSQL B-Tree indexes.
+
+---
+
+### 5.8 Unique Constraints & Business Key Rules
+
+1. **Natural & Business Key Constraints**:
+   - Distinct from internal `UUID` primary keys, business keys enforce real-world domain uniqueness:
+     - `email String @unique` on `User`
+     - `medicalRecordNumber String @unique @map("medical_record_number")` on `Patient`
+2. **Uniqueness Across Soft-Deleted Records**:
+   - In healthcare systems, critical business identifiers like `MRN` and staff `email` remain permanently unique across both active and soft-deleted states.
+   - This prevents identity collisions, prevents reassignment of medical record histories, and preserves forensic continuity.
+3. **Duplicate Handling & Error Mapping**:
+   - When a unique constraint violation occurs (PostgreSQL error code `23505` / Prisma error code `P2002`), the application's centralized `error.middleware.ts` automatically converts it into a standardized `409 Conflict` response (`code: "DUPLICATE_RESOURCE"`).
+
+---
+
 ## 6. API Design & Response Envelopes
 
 ### RESTful Routing Standards
