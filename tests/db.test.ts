@@ -290,4 +290,29 @@ describe('PostgreSQL Database Configuration & Conventions', () => {
       expect(indexNames.some((n) => n.includes('audit_logs_created_at'))).toBe(true)
     })
   })
+
+  describe('Database Migrations Tracking (_prisma_migrations)', () => {
+    it('should verify migration tracking table exists and initial migration is recorded as applied', async () => {
+      const migrationRows = await prisma.$queryRaw<
+        Array<{
+          id: string
+          migration_name: string
+          applied_steps_count: number
+          finished_at: Date | null
+        }>
+      >`
+        SELECT id, migration_name, applied_steps_count, finished_at 
+        FROM "_prisma_migrations" 
+        ORDER BY started_at ASC
+      `
+
+      expect(migrationRows.length).toBeGreaterThan(0)
+      const initMigration = migrationRows.find((m) =>
+        m.migration_name.includes('init_healthcare_erp_schema')
+      )
+      expect(initMigration).toBeDefined()
+      expect(initMigration?.finished_at).toBeDefined()
+      expect(initMigration?.finished_at).not.toBeNull()
+    })
+  })
 })

@@ -12,47 +12,51 @@ A backend API for a Healthcare Enterprise Resource Planning (ERP) system, built 
 - [**System Architecture & Data Flow**](docs/ARCHITECTURE.md) — Request lifecycle, middleware pipeline, layer breakdown (Route $\rightarrow$ Controller $\rightarrow$ Service $\rightarrow$ Repository $\rightarrow$ Prisma), and module templates.
 - [**Module Boundaries & Dependency Rules**](docs/MODULE_BOUNDARIES.md) — Domain taxonomy, ownership matrix, unidirectional dependency graph, and inter-module communication rules.
 - [**API Versioning Strategy & Route Registration**](docs/API_VERSIONING.md) — API root discovery, URI versioning (`/api/v1`), route aggregation, and deprecation policies.
+- [**Database Migrations & Schema Evolution**](docs/DATABASE_MIGRATIONS.md) — Prisma migration lifecycle, zero-downtime expand-contract strategy, and production deployments.
 - [**Changelog & Releases**](CHANGELOG.md) — Version history and release notes ([v1.0.3 Changelog](changelogs/v1.0.3.md) / [v1.0.2 Changelog](changelogs/v1.0.2.md) / [v1.0.1 Changelog](changelogs/v1.0.1.md)).
 
 ---
 
 ## Quick Start (Zero Configuration)
 
-You can run, build, and manage everything using the all-in-one runner script without memorizing commands:
+You can launch everything with a single command — the automated launch script executes all pre-flight checks, verifies `.env`, installs dependencies, runs database migrations, seeds initial data, checks architecture boundaries, and starts development services in order without prompting for options:
 
-### macOS & Linux
+### 1. Automated Sequential Launch (Recommended)
 
+#### macOS & Linux
 ```sh
-# Open the interactive runner menu:
-./run.sh
+./launch.sh
+# or: bun run launch
+```
 
-# Or run commands directly:
+#### Windows
+```bat
+launch.bat
+```
+
+---
+
+### 2. Interactive Menu & Direct Commands
+
+If you prefer selecting individual tasks (build, migrate, test, studio):
+
+#### macOS & Linux
+```sh
+./run.sh              # Open interactive runner menu
 ./run.sh dev          # Start development server with hot reload
 ./run.sh build        # Typecheck & build production bundle
-./run.sh start        # Start compiled production server
 ./run.sh test         # Run automated tests
-./run.sh db:seed      # Seed database with initial accounts
-./run.sh db:studio    # Open Prisma Studio web GUI
-./run.sh db:migrate   # Run database migrations
+./run.sh db:setup     # Verify DB, deploy migrations & seed
 ```
 
-### Windows
-
+#### Windows
 ```bat
-:: Open the interactive runner menu:
-run.bat
-
-:: Or run commands directly:
-run.bat dev
-run.bat build
-run.bat start
-run.bat test
-run.bat db:seed
-run.bat db:studio
-run.bat db:migrate
+run.bat               :: Open interactive runner menu
+run.bat dev           :: Start development server
+run.bat build         :: Typecheck & build production bundle
+run.bat test          :: Run automated tests
+run.bat db:setup      :: Verify DB, deploy migrations & seed
 ```
-
-> **Automated checks**: The runner automatically checks if Bun is installed, generates `.env` from `.env.example` if missing, and installs `node_modules` automatically.
 
 ---
 
@@ -201,11 +205,14 @@ bun run build:dashboard   # Build React monitoring dashboard bundle
 # Testing
 bun test                  # Run automated tests
 
-# Database
-bun run db:seed           # Seed database with sample accounts
+# Database & Migrations
+bun run db:setup          # Verify PostgreSQL connection, deploy migrations & seed
+bun run db:migrate        # Create and apply new migrations locally (interactive)
+bun run db:migrate:deploy # Apply pending migrations non-interactively (CI/CD & prod)
+bun run db:migrate:status # Check migration sync and detect schema drift
+bun run db:migrate:reset  # Reset database, reapply all migrations, and seed
 bun run db:generate       # Generate Prisma Client
-bun run db:migrate        # Create and apply migrations
-bun run db:push           # Push schema directly to DB
+bun run db:seed           # Seed database with sample accounts
 bun run db:studio         # Launch Prisma Studio web GUI
 bun run db:validate       # Validate Prisma schema
 ```

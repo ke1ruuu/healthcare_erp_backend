@@ -63,20 +63,20 @@ async function main() {
 
   console.log('[OK] PostgreSQL server is reachable on TCP port.')
 
-  // Step 2: Run Prisma DB Push & Client Generation
-  console.log('\nSynchronizing Prisma schema with database...')
-  const pushProc = Bun.spawnSync(['bunx', 'prisma', 'db', 'push', '--skip-generate'], {
+  // Step 2: Run Prisma Migration Deployment & Sync
+  console.log('\nApplying pending Prisma migrations...')
+  const migrateProc = Bun.spawnSync(['bunx', 'prisma', 'migrate', 'deploy'], {
     env: process.env,
     stdout: 'pipe',
     stderr: 'pipe',
   })
 
-  if (pushProc.exitCode !== 0) {
-    console.error('[ERROR] Failed to synchronize Prisma schema.')
-    console.error(pushProc.stderr.toString())
+  if (migrateProc.exitCode !== 0) {
+    console.error('[ERROR] Failed to apply Prisma migrations.')
+    console.error(migrateProc.stderr.toString())
     process.exit(1)
   }
-  console.log('[OK] Database schema, enums, indexes, and tables synchronized.')
+  console.log('[OK] All database migrations applied successfully.')
 
   // Step 3: Verify Prisma Client connectivity and probe latency
   console.log('\nProbing database connection via Prisma...')

@@ -97,26 +97,30 @@ show_menu() {
 # Database Sub-Menu
 show_db_menu() {
   echo -e "${CYAN}${BOLD}--- Prisma Database Management ---${NC}"
-  echo "  1) Setup & Verify Local DB (bun run db:setup)"
-  echo "  2) Seed Database (bun run db:seed)"
-  echo "  3) Open Prisma Studio (Web GUI)"
-  echo "  4) Run Migrations (bun run db:migrate)"
-  echo "  5) Push Schema (bun run db:push)"
-  echo "  6) Generate Prisma Client (bun run db:generate)"
-  echo "  7) Validate Schema (bun run db:validate)"
+  echo "  1) Setup & Migrate Local DB  (bun run db:setup)"
+  echo "  2) Create / Apply Migration  (bun run db:migrate)"
+  echo "  3) Deploy Migrations (Prod)  (bun run db:migrate:deploy)"
+  echo "  4) Check Migration Status    (bun run db:migrate:status)"
+  echo "  5) Reset Database & Seed     (bun run db:migrate:reset)"
+  echo "  6) Open Prisma Studio (GUI)  (bun run db:studio)"
+  echo "  7) Seed Accounts             (bun run db:seed)"
+  echo "  8) Generate Prisma Client    (bun run db:generate)"
+  echo "  9) Validate Schema           (bun run db:validate)"
   echo "  0) Back to Main Menu"
   echo ""
-  read -p "Enter choice [0-7]: " db_choice
+  read -p "Enter choice [0-9]: " db_choice
   echo ""
 
   case "$db_choice" in
     1) bun run db:setup ;;
-    2) bun run db:seed ;;
-    3) bun run db:studio ;;
-    4) bun run db:migrate ;;
-    5) bun run db:push ;;
-    6) bun run db:generate ;;
-    7) bun run db:validate ;;
+    2) bun run db:migrate ;;
+    3) bun run db:migrate:deploy ;;
+    4) bun run db:migrate:status ;;
+    5) bun run db:migrate:reset ;;
+    6) bun run db:studio ;;
+    7) bun run db:seed ;;
+    8) bun run db:generate ;;
+    9) bun run db:validate ;;
     0) show_menu ;;
     *) echo -e "${RED}Invalid choice.${NC}"; exit 1 ;;
   esac
@@ -124,6 +128,13 @@ show_db_menu() {
 
 # Actions
 run_dev() {
+  local pids
+  pids=$(lsof -ti :3000 2>/dev/null || true)
+  if [ -n "$pids" ]; then
+    echo -e "${YELLOW}Terminating existing process on port 3000 (PID: ${pids})...${NC}"
+    kill -9 $pids 2>/dev/null || true
+    sleep 0.3
+  fi
   echo -e "${GREEN}Starting development server with hot reload...${NC}"
   bun run dev
 }
@@ -172,9 +183,12 @@ else
     typecheck) run_typecheck ;;
     clean) run_clean ;;
     db:setup) bun run db:setup ;;
+    db:migrate) bun run db:migrate ;;
+    db:migrate:deploy) bun run db:migrate:deploy ;;
+    db:migrate:status) bun run db:migrate:status ;;
+    db:migrate:reset) bun run db:migrate:reset ;;
     db:seed) bun run db:seed ;;
     db:studio) bun run db:studio ;;
-    db:migrate) bun run db:migrate ;;
     db:push) bun run db:push ;;
     db:generate) bun run db:generate ;;
     db:validate) bun run db:validate ;;

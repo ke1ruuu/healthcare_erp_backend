@@ -3,6 +3,7 @@
   "scripts": {
     "dev": "bun run --hot src/index.ts",
     "dev:dashboard": "cd dashboard && bun run dev",
+    "launch": "./launch.sh",
     "clean": "rm -rf dist",
     "check:boundaries": "bun run scripts/check-boundaries.ts",
     "check:api-drift": "bun run scripts/check-api-drift.ts",
@@ -16,6 +17,10 @@
     "db:setup": "bun run scripts/setup-db.ts",
     "db:generate": "bunx prisma generate",
     "db:migrate": "bunx prisma migrate dev",
+    "db:migrate:deploy": "bunx prisma migrate deploy",
+    "db:migrate:status": "bunx prisma migrate status",
+    "db:migrate:reset": "bunx prisma migrate reset --force",
+    "db:migrate:create": "bunx prisma migrate dev --create-only",
     "db:push": "bunx prisma db push",
     "db:seed": "bun run prisma/seed.ts",
     "db:studio": "bunx prisma studio",
