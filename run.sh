@@ -74,7 +74,7 @@ show_menu() {
   echo "  3) Start Production Server     (bun run start)"
   echo "  4) Run Automated Tests         (bun test)"
   echo "  5) Type Check (TypeScript)     (bun run typecheck)"
-  echo "  6) Prisma Database Menu        (Seed, Migrate, Studio, Push)"
+  echo "  6) Prisma Database Menu        (Setup, Seed, Migrate, Studio, Push)"
   echo "  7) Clean Build Cache           (bun run clean)"
   echo "  0) Exit"
   echo ""
@@ -97,24 +97,26 @@ show_menu() {
 # Database Sub-Menu
 show_db_menu() {
   echo -e "${CYAN}${BOLD}--- Prisma Database Management ---${NC}"
-  echo "  1) Seed Database (bun run db:seed)"
-  echo "  2) Open Prisma Studio (Web GUI)"
-  echo "  3) Run Migrations (bun run db:migrate)"
-  echo "  4) Push Schema (bun run db:push)"
-  echo "  5) Generate Prisma Client (bun run db:generate)"
-  echo "  6) Validate Schema (bun run db:validate)"
+  echo "  1) Setup & Verify Local DB (bun run db:setup)"
+  echo "  2) Seed Database (bun run db:seed)"
+  echo "  3) Open Prisma Studio (Web GUI)"
+  echo "  4) Run Migrations (bun run db:migrate)"
+  echo "  5) Push Schema (bun run db:push)"
+  echo "  6) Generate Prisma Client (bun run db:generate)"
+  echo "  7) Validate Schema (bun run db:validate)"
   echo "  0) Back to Main Menu"
   echo ""
-  read -p "Enter choice [0-6]: " db_choice
+  read -p "Enter choice [0-7]: " db_choice
   echo ""
 
   case "$db_choice" in
-    1) bun run db:seed ;;
-    2) bun run db:studio ;;
-    3) bun run db:migrate ;;
-    4) bun run db:push ;;
-    5) bun run db:generate ;;
-    6) bun run db:validate ;;
+    1) bun run db:setup ;;
+    2) bun run db:seed ;;
+    3) bun run db:studio ;;
+    4) bun run db:migrate ;;
+    5) bun run db:push ;;
+    6) bun run db:generate ;;
+    7) bun run db:validate ;;
     0) show_menu ;;
     *) echo -e "${RED}Invalid choice.${NC}"; exit 1 ;;
   esac
@@ -169,6 +171,7 @@ else
     test) run_test ;;
     typecheck) run_typecheck ;;
     clean) run_clean ;;
+    db:setup) bun run db:setup ;;
     db:seed) bun run db:seed ;;
     db:studio) bun run db:studio ;;
     db:migrate) bun run db:migrate ;;
@@ -186,6 +189,7 @@ else
       echo "  test         Run tests"
       echo "  typecheck    Run TypeScript checks"
       echo "  clean        Remove ./dist folder"
+      echo "  db:setup     Verify, sync, and seed local PostgreSQL DB"
       echo "  db:seed      Seed database with initial accounts"
       echo "  db:studio    Open Prisma Studio"
       echo "  db:migrate   Run Prisma migration"

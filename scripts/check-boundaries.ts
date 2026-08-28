@@ -137,15 +137,15 @@ async function checkArchitecturalBoundaries(): Promise<Violation[]> {
 }
 
 async function main() {
-  console.log('🔍 Checking architectural module boundaries and import rules...')
+  console.log('[CHECK] Checking architectural module boundaries and import rules...')
   const violations = await checkArchitecturalBoundaries()
 
   if (violations.length === 0) {
-    console.log('✅ All module boundaries, shared kernel rules, and import policies passed successfully!\n')
+    console.log('[OK] All module boundaries, shared kernel rules, and import policies passed successfully!\n')
     process.exit(0)
   }
 
-  console.error(`\n❌ Found ${violations.length} architectural boundary violation(s):\n`)
+  console.error(`\n[ERROR] Found ${violations.length} architectural boundary violation(s):\n`)
   violations.forEach((v, index) => {
     console.error(`  [${index + 1}] Rule: ${v.rule}`)
     console.error(`      File: src/${v.file}:${v.line}`)

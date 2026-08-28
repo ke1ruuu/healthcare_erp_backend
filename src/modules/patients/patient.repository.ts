@@ -1,4 +1,4 @@
-import { type Patient, type Prisma, Gender, BloodType } from '@prisma/client'
+import { type Patient, type Prisma, Gender, BloodType, PatientStatus } from '@prisma/client'
 import { prisma } from '@/db/prisma'
 import { parseSorting, parseSearch, parseDateRange } from '@/shared/utils/query.util'
 import { PATIENT_SORTABLE_FIELDS, type PatientSortableField } from './patient.dto'
@@ -9,6 +9,7 @@ export interface FindAllPatientsParams {
   take?: number
   gender?: Gender
   bloodType?: BloodType
+  status?: PatientStatus
   search?: string
   sortBy?: PatientSortableField
   sortOrder?: SortOrder
@@ -42,6 +43,7 @@ export class PatientRepository implements IPatientRepository {
       deletedAt: null,
       ...(params.gender && { gender: params.gender }),
       ...(params.bloodType && { bloodType: params.bloodType }),
+      ...(params.status && { status: params.status }),
       ...searchCondition,
       ...dateCondition,
     }

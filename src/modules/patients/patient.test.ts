@@ -3,7 +3,7 @@ import { PatientService } from './patient.service'
 import type { IPatientRepository, FindAllPatientsParams } from './patient.repository'
 import type { IAuditLogRepository } from '@/modules/audit-logs'
 import { EventBus } from '@/shared/events/event-bus'
-import { Gender, BloodType, type Patient, type Prisma } from '@prisma/client'
+import { Gender, BloodType, PatientStatus, type Patient, type Prisma } from '@prisma/client'
 import { NotFoundException, ConflictException } from '@/shared/exceptions/app.exception'
 import { PatientController } from './patient.controller'
 import { Hono } from 'hono'
@@ -33,6 +33,9 @@ class MockPatientRepository implements IPatientRepository {
     if (params.bloodType) {
       result = result.filter((p) => p.bloodType === params.bloodType)
     }
+    if (params.status) {
+      result = result.filter((p) => p.status === params.status)
+    }
     const skip = params.skip ?? 0
     const take = params.take ?? 20
     return result.slice(skip, skip + take)
@@ -54,6 +57,7 @@ class MockPatientRepository implements IPatientRepository {
       dateOfBirth: new Date(data.dateOfBirth as string | Date),
       gender: (data.gender as Gender) ?? Gender.UNKNOWN,
       bloodType: (data.bloodType as BloodType) ?? BloodType.UNKNOWN,
+      status: (data.status as PatientStatus) ?? PatientStatus.ACTIVE,
       address: data.address ?? null,
       emergencyContactName: data.emergencyContactName ?? null,
       emergencyContactPhone: data.emergencyContactPhone ?? null,

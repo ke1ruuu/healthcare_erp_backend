@@ -7,6 +7,9 @@ cd "$PROJECT_ROOT"
 COMMAND="${1:-menu}"
 
 case "$COMMAND" in
+  setup)
+    exec bun run db:setup
+    ;;
   seed)
     exec bun run db:seed
     ;;
@@ -29,21 +32,23 @@ case "$COMMAND" in
     echo "=========================================="
     echo "      Prisma Database Helper Script       "
     echo "=========================================="
-    echo "  1) Seed      (Seed initial data)"
-    echo "  2) Studio    (Web UI)"
-    echo "  3) Migrate   (Apply migrations)"
-    echo "  4) Push      (Sync schema)"
-    echo "  5) Generate  (Regenerate client)"
-    echo "  6) Validate  (Check schema)"
+    echo "  1) Setup     (Verify, sync & seed local DB)"
+    echo "  2) Seed      (Seed initial accounts)"
+    echo "  3) Studio    (Web GUI)"
+    echo "  4) Migrate   (Apply migrations)"
+    echo "  5) Push      (Sync schema)"
+    echo "  6) Generate  (Regenerate client)"
+    echo "  7) Validate  (Check schema)"
     echo ""
-    read -p "Select option [1-6]: " choice
+    read -p "Select option [1-7]: " choice
     case "$choice" in
-      1) exec bun run db:seed ;;
-      2) exec bun run db:studio ;;
-      3) exec bun run db:migrate ;;
-      4) exec bun run db:push ;;
-      5) exec bun run db:generate ;;
-      6) exec bun run db:validate ;;
+      1) exec bun run db:setup ;;
+      2) exec bun run db:seed ;;
+      3) exec bun run db:studio ;;
+      4) exec bun run db:migrate ;;
+      5) exec bun run db:push ;;
+      6) exec bun run db:generate ;;
+      7) exec bun run db:validate ;;
       *) echo "Invalid option"; exit 1 ;;
     esac
     ;;

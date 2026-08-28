@@ -1,0 +1,70 @@
+{
+  "title": "Choose the visual world",
+  "question": "Replacing the CRT-scope world. You pinned: no object metaphor, nothing that looks like every other dashboard, nothing safe. The roll assigned Checked — and it is the only card on this table with no costume in it. Keep it, take an alternate, or re-roll.",
+  "options": [
+    {
+      "id": "assigned",
+      "label": "Checked",
+      "kicker": "THE ROLL",
+      "lineage": "The compiler diagnostic — rustc and tsc error reports, read as a designed publication rather than terminal output",
+      "thesis": "The backend reports itself the way a type-checker reports code: every number is a span with a caret drawn under it, a source path printed above it, and a severity computed from the reading rather than chosen by me. It refuses the metric-card grid outright — there is no card to put a number in. A diagnostic is not an object; it is the graphic your audience reads more often than anything except their own code.",
+      "palette": ["#DEE2DD", "#F4F6F2", "#0A2320", "#D62511", "#1B4FD0", "#8F6100"],
+      "materials": [
+        "no material and no texture — a report, on a screen",
+        "full-height petrol field carrying the check list",
+        "numbered gutter with caret annotation rows",
+        "hairline rules; zero borders, zero shadows, zero radius"
+      ],
+      "viewport": "No header, no cards. A petrol field down the left lists four checks by code and live severity — SVC-001 note, REC-002 note, REQ-003 note, BND-004 warn. The rest of the screen is one enormous diagnostic block on a bright cool-grey sheet: the severity keyword set large, then '--> GET /api/v1/telemetry · 3.05 ms probe', then a numbered gutter where uptime, Postgres round-trip, heap and record counts each sit as a value with a caret row struck under it carrying its qualifier. The 60-sample latency window draws as sixty hairline columns directly beneath the caret that annotates it, direct-labelled, no gridlines and no legend. It closes on '= note: every value above is measured on read'.",
+      "risk": "Set in mono on a dark ground this becomes a terminal skin — precisely the costume you just rejected. It survives only as a publication: bright ground, Chivo carrying language, mono reserved strictly for what was measured, and severity as the only colour on the page. Set timidly it reads as a log file. BND-004 also sits at 'warn' permanently, because the telemetry route really does hardcode two of its statuses — honest, and it will look like a defect until you read why."
+    },
+    {
+      "id": "challenger-cyclorama",
+      "label": "Cyclorama",
+      "verdict": "competitive",
+      "lineage": "Stage lighting — a seamless cyc wall passing from night through cobalt and rose into white day, where light alone makes the horizon",
+      "thesis": "Service state is expressed as the light in the room: the page ground moves through named phases — blackout, first light, dawn, day — and only a fully measured, fully connected service earns the white-day wash.",
+      "palette": ["#0B0E16", "#12306B", "#B85A6B", "#F2F0EB", "#D9C24A"],
+      "materials": ["depthless cyc ground", "low cobalt horizon band", "lighting-plot stencil caps", "tabular numerals"],
+      "viewport": "Content held in horizontal horizon bands stacked dark to light, cue names in stencil caps, the active state raising the whole wall's brightness.",
+      "case": "The one genuinely strong idea on the table besides the roll: a ground driven by real state, with 'colour is never the sole signal' already written into its own grammar. Loses on both axes anyway. Audience identification — theatre lighting is not an engineer's world, and it would be read as a mood, not a system. Product clarity — its most common state is depthless black, which is the near-black rut you asked me to leave, and a paged patient table set inside a gradient band cannot hold contrast across twenty rows.",
+      "risk": "Atmosphere is easy to admire and hard to read a latency number in."
+    },
+    {
+      "id": "challenger-hypercard",
+      "label": "Shoebox Stack",
+      "verdict": "competitive",
+      "lineage": "HyperCard — one-bit black on white, stipple-dither greys, cards linked by buttons anyone can paint",
+      "thesis": "The tool for reading is also the tool for making: every card is editable in place, and browse and author are two modes of one object.",
+      "palette": ["#FFFFFF", "#000000", "#8A8A8A"],
+      "materials": ["one-bit black on white", "stipple dither as the only grey", "pressed buttons inverting to solid black"],
+      "viewport": "Fixed-proportion cards with hand-drawn borders, bold pixel menus over plain body text, dissolving between each other.",
+      "case": "The hardest refusal of the rut here — no colour anywhere means no neon, no glass, no gradient, structurally. Its 'read and write are the same object' also maps unusually well, since this surface both lists patients and registers one. Loses on product clarity: no colour means no severity, and severity is a native affordance a monitoring surface may not drop — a fault has to look different from a reading. Loses on identification too, because pixel type is period costume and you vetoed costume.",
+      "risk": "Pixel type at dashboard density is a legibility problem before it is an aesthetic one."
+    },
+    {
+      "id": "challenger-timetable",
+      "label": "Slide Rack",
+      "verdict": "declined",
+      "lineage": "A 1971 pocket airline timetable read as raked tinted-glass slides on a lit goldenrod bed",
+      "thesis": "One single type size for the entire surface — rank carried only by weight, case, reversal and rule, never by size.",
+      "palette": ["#D9B23A", "#2E3A3C", "#F2EDE0", "#C1301B", "#12463A"],
+      "materials": ["lit goldenrod bed", "slate tinted glass", "11-degree raked containers"],
+      "case": "Fuses poorly. Sheared 11-degree containers run straight through a paged table, a seven-field form and a JSON response body — the three things on this surface that most need square baselines and selectable text. Engineers do not identify with airline timetables, and 'lit goldenrod under tinted glass' is exactly the material costume you ruled out.",
+      "kept": "The single-type-size discipline is a real idea and I am carrying it into the roll in weaker form: the diagnostic runs on two sizes, not seven, with rank carried by weight, case and rule.",
+      "risk": "A rake that looks decisive in a poster is a bug in a data table."
+    }
+  ],
+  "reroll": { "registers": ["safer", "bolder"] },
+  "canon": true,
+  "canonCard": {
+    "label": "The category standard",
+    "lineage": "Grafana by way of Vercel",
+    "thesis": "The observability dashboard every backend ships: near-black ground, one cyan accent, rounded glass tiles, gradient sparklines — executed at full craft rather than as a parody.",
+    "palette": ["#09090B", "#18181B", "#22D3EE", "#A1A1AA"],
+    "materials": ["glass blur", "rounded-2xl tile", "1px zinc border"],
+    "viewport": "A four-up metric tile row, a full-width area chart, a table below, a dark sidebar left.",
+    "risk": "You told me twice this is the thing to avoid — once as 'AI slop', once as 'like every other dashboard'. It is on the table because it is always your right to take it, not because I am recommending it."
+  },
+  "steer": true
+}

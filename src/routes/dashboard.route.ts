@@ -408,7 +408,7 @@ dashboardRoute.get('/', (c) => {
     <!-- Header -->
     <header>
       <div class="brand-section">
-        <div class="logo-badge">🏥</div>
+        <div class="logo-badge" style="font-weight: bold; font-size: 16px; color: #fff;">ERP</div>
         <div class="brand-text">
           <h1>Healthcare ERP Backend <span class="status-badge" id="system-status-badge"><span class="pulse-dot"></span> Online</span></h1>
           <p>Modular-Monolith Architecture • Bun Runtime • Prisma PostgreSQL</p>
@@ -424,8 +424,8 @@ dashboardRoute.get('/', (c) => {
             <option value="0">Pause</option>
           </select>
         </div>
-        <button class="btn" onclick="fetchTelemetry()">⚡ Refresh</button>
-        <a href="/docs" target="_blank" class="btn btn-primary">📑 Swagger UI</a>
+        <button class="btn" onclick="fetchTelemetry()">Refresh</button>
+        <a href="/docs" target="_blank" class="btn btn-primary">Swagger UI</a>
       </div>
     </header>
 
@@ -435,7 +435,7 @@ dashboardRoute.get('/', (c) => {
       <div class="card">
         <div class="card-header">
           <span class="card-title">Server Uptime</span>
-          <span class="card-icon">⏱️</span>
+          <span class="card-icon" style="font-size: 11px; font-weight: bold; color: var(--accent-cyan);">SYS</span>
         </div>
         <div class="metric-value" id="val-uptime">--:--:--</div>
         <div class="metric-subtext">
@@ -448,7 +448,7 @@ dashboardRoute.get('/', (c) => {
       <div class="card">
         <div class="card-header">
           <span class="card-title">Heap Memory</span>
-          <span class="card-icon">🧠</span>
+          <span class="card-icon" style="font-size: 11px; font-weight: bold; color: var(--accent-violet);">RAM</span>
         </div>
         <div class="metric-value" id="val-heap">-- MB</div>
         <div class="metric-subtext">
@@ -464,7 +464,7 @@ dashboardRoute.get('/', (c) => {
       <div class="card">
         <div class="card-header">
           <span class="card-title">PostgreSQL Latency</span>
-          <span class="card-icon">🗄️</span>
+          <span class="card-icon" style="font-size: 11px; font-weight: bold; color: var(--accent-emerald);">DB</span>
         </div>
         <div class="metric-value" id="val-db-latency">-- ms</div>
         <div class="metric-subtext">
@@ -477,7 +477,7 @@ dashboardRoute.get('/', (c) => {
       <div class="card">
         <div class="card-header">
           <span class="card-title">Domain Entities</span>
-          <span class="card-icon">👥</span>
+          <span class="card-icon" style="font-size: 11px; font-weight: bold; color: var(--accent-blue);">REC</span>
         </div>
         <div class="metric-value" id="val-patients-count">-- Patients</div>
         <div class="metric-subtext">
@@ -504,14 +504,14 @@ dashboardRoute.get('/', (c) => {
       <div class="card">
         <div class="card-header">
           <span class="card-title">Architectural Governance</span>
-          <span class="card-icon">🛡️</span>
+          <span class="card-icon" style="font-size: 11px; font-weight: bold; color: var(--accent-cyan);">GUARD</span>
         </div>
         <div style="margin-top: 10px;">
           <div style="margin-bottom: 12px;">
-            <span class="badge-pill success">✓ Boundaries Enforced</span>
-            <span class="badge-pill success">✓ Zero Deep Imports</span>
-            <span class="badge-pill success">✓ No Circular Deps</span>
-            <span class="badge-pill success">✓ API Drift: Clean</span>
+            <span class="badge-pill success">[OK] Boundaries Enforced</span>
+            <span class="badge-pill success">[OK] Zero Deep Imports</span>
+            <span class="badge-pill success">[OK] No Circular Deps</span>
+            <span class="badge-pill success">[OK] API Drift: Clean</span>
             <span class="badge-pill">URI Versioning: /api/v1</span>
           </div>
           <p style="font-size: 12px; color: var(--text-muted); line-height: 1.6;">

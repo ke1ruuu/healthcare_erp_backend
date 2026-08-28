@@ -13,6 +13,7 @@
     "start": "bun run dist/index.js",
     "test": "bun test",
     "postinstall": "bun run db:generate",
+    "db:setup": "bun run scripts/setup-db.ts",
     "db:generate": "bunx prisma generate",
     "db:migrate": "bunx prisma migrate dev",
     "db:push": "bunx prisma db push",

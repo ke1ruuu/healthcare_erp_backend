@@ -69,16 +69,16 @@ function analyzeContracts(): ContractIssue[] {
 }
 
 function printReport(issues: ContractIssue[]) {
-  console.log('🔍 Running API Drift & Breaking Change Detector...\n')
-  console.log(`📋 Total Endpoints Analyzed: ${Object.keys(openApiSpec.paths).length}`)
-  console.log(`📦 Total Component Schemas: ${Object.keys(openApiSpec.components.schemas).length}\n`)
+  console.log('[CHECK] Running API Drift & Breaking Change Detector...\n')
+  console.log(`Total Endpoints Analyzed: ${Object.keys(openApiSpec.paths).length}`)
+  console.log(`Total Component Schemas: ${Object.keys(openApiSpec.components.schemas).length}\n`)
 
   const breaking = issues.filter((i) => i.severity === 'BREAKING')
   const warnings = issues.filter((i) => i.severity === 'WARNING')
   const info = issues.filter((i) => i.severity === 'INFO')
 
   if (breaking.length > 0) {
-    console.error('🚨 BREAKING CHANGES DETECTED — ACTION REQUIRED:')
+    console.error('[CRITICAL] BREAKING CHANGES DETECTED -- ACTION REQUIRED:')
     console.error('----------------------------------------------------')
     console.error('The following changes break backward compatibility for active API v1 clients.')
     console.error('You must either revert these changes or proceed to publish an /api/v2 version!\n')
@@ -92,7 +92,7 @@ function printReport(issues: ContractIssue[]) {
   }
 
   if (warnings.length > 0) {
-    console.warn('⚠️  CONTRACT WARNINGS:')
+    console.warn('[WARNING] CONTRACT WARNINGS:')
     warnings.forEach((issue, idx) => {
       console.warn(`  [${idx + 1}] ${issue.target}: ${issue.detail} -> ${issue.recommendation}`)
     })
@@ -100,9 +100,9 @@ function printReport(issues: ContractIssue[]) {
   }
 
   if (breaking.length === 0) {
-    console.log('✅ API Contract Compatibility Status: PASS')
-    console.log('🛡️  All endpoints and schemas remain backward-compatible with API v1.')
-    console.log('ℹ️  No breaking changes detected. No need to proceed to v2 at this time.\n')
+    console.log('[OK] API Contract Compatibility Status: PASS')
+    console.log('All endpoints and schemas remain backward-compatible with API v1.')
+    console.log('No breaking changes detected. No need to proceed to v2 at this time.\n')
   }
 }
 

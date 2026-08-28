@@ -6,8 +6,8 @@ A backend API for a Healthcare Enterprise Resource Planning (ERP) system, built 
 
 ## Documentation & Monitoring
 
-- 🖥️ [**React Vite Monitoring Dashboard**](http://localhost:5173) (`dashboard/`) — Real-time telemetry, memory gauges, database latency graphs, domain data explorer, and interactive API workbench.
-- 📑 [**Interactive Swagger UI**](http://localhost:3000/docs) (`/docs` or `/swagger`) — Live OpenAPI 3.1 interactive testbed and schema explorer.
+- [**React Vite Monitoring Dashboard**](http://localhost:5173) (`dashboard/`) — Real-time telemetry, memory gauges, database latency graphs, domain data explorer, and interactive API workbench.
+- [**Interactive Swagger UI**](http://localhost:3000/docs) (`/docs` or `/swagger`) — Live OpenAPI 3.1 interactive testbed and schema explorer.
 - [**Engineering & Naming Conventions**](docs/CONVENTIONS.md) — File/folder naming, code identifiers, response envelopes, DTO validation, and healthcare compliance guidelines.
 - [**System Architecture & Data Flow**](docs/ARCHITECTURE.md) — Request lifecycle, middleware pipeline, layer breakdown (Route $\rightarrow$ Controller $\rightarrow$ Service $\rightarrow$ Repository $\rightarrow$ Prisma), and module templates.
 - [**Module Boundaries & Dependency Rules**](docs/MODULE_BOUNDARIES.md) — Domain taxonomy, ownership matrix, unidirectional dependency graph, and inter-module communication rules.

@@ -1,0 +1,66 @@
+{
+  "title": "Choose the visual world",
+  "question": "Replacing the dashboard's visual world. The roll assigned Wing & Bay. Keep it, take an alternate, or re-roll.",
+  "options": [
+    {
+      "id": "assigned",
+      "label": "Wing & Bay",
+      "kicker": "THE ROLL",
+      "lineage": "Hospital wayfinding supergraphics — Aicher, Vignelli, Crosby/Fletcher/Forbes",
+      "thesis": "A backend read the way you read your way through a hospital: supergraphic bay numerals, departmental colour fields, plates and arrows at architectural scale.",
+      "palette": ["#E7E4DC", "#1A1A18", "#D8380F", "#1B3FA8", "#0E6B4F", "#F2C407"],
+      "materials": ["painted plaster wall", "enamelled sign plate", "engraved door plate", "hazard tape"],
+      "viewport": "A hung corridor sign across the top: building name left, four destination plates with colour chips and arrows, live status right. Beneath it the wing entrance — a supergraphic 01 in vermilion bleeding off its field, SERVICE VITALS set in condensed caps beside it, bay code SVC-001 on a door plate. Then four bay-number readouts (uptime, heap, Postgres round-trip, active records) as huge mono numerals on a hairline-ruled band, and the latency trace as a flat wall-mounted graph plate.",
+      "risk": "Signage colour can slide into institutional dullness or cheerful medical mint; supergraphic numerals eat a phone viewport unless the wing entrance collapses to a colour band.",
+      "board": "https://impeccable.style/worlds/cards/wayfinding-cartography-signage-midnight-transit-diagram.webp"
+    },
+    {
+      "id": "challenger-transit",
+      "label": "Midnight Interchange",
+      "lineage": "Metropolitan rail diagram as midnight-blue enamel mural",
+      "thesis": "The architecture as a transit network: layers are stations in fixed order, module boundaries are fare boundaries, a request is a traced route.",
+      "palette": ["#101C3A", "#F4F1EA", "#D8322C", "#1F6FD0", "#E9A21B", "#12855A"],
+      "materials": ["midnight enamel", "porcelain station tick", "45/90° line ink"],
+      "viewport": "A full-bleed enamel mural: four coloured lines bending at 45° and 90°, the selected line burning brightest, interchange circles blooming where modules meet. route → controller → service → repository → Prisma runs as five stations along one corridor.",
+      "case": "Fuses strongly — the layer stack becomes station order and enforced boundaries become fare boundaries, which is more legible than the prose it replaces. Loses on product clarity: a network mural has no native grammar for a paged, sorted directory of patient records or a raw JSON response body, so two of four panels would need invented grammar.",
+      "risk": "A diagram world flatters the architecture panel and fights the two data-table panels.",
+      "hero": "https://impeccable.style/worlds/cards/wayfinding-cartography-signage-midnight-transit-diagram-hero.webp"
+    },
+    {
+      "id": "challenger-blind",
+      "label": "Depot Blind",
+      "lineage": "Bus depot destination blind — dyed duck cloth on a roll",
+      "thesis": "Status as a roll of stacked cloth courses stepping under one fixed window; a fault is the row halted mid-step, two half-legends meeting across one seam.",
+      "palette": ["#0F4A2E", "#F2C010", "#EFE9DA", "#1A1A18"],
+      "materials": ["bottle-green duck cloth", "chrome-yellow legend", "bleached calico", "punched eyelet tape"],
+      "viewport": "Bottle-green cloth drenching the field, lit from behind so the weave shows. Chrome-yellow condensed caps step one whole line-height with an overshoot whenever a telemetry value changes; the lead panel alone inverts to dark-on-pale.",
+      "case": "The best fault state on the table — a row stopped mid-step across a single seam is original and unmistakable, and the snap-step motion makes live values genuinely physical. Loses on product clarity: one type size, caps only, and controls that take no dye break the seven-field patient registration form, the response viewer, and the boundary-rule prose.",
+      "risk": "Its own grammar forbids the type hierarchy and dyed controls that three of the four panels need.",
+      "hero": "https://impeccable.style/worlds/cards/operate-c-depot-blind-courses-hero.webp"
+    },
+    {
+      "id": "challenger-scope",
+      "label": "Signal Bench",
+      "lineage": "CRT oscilloscope on a signal bench",
+      "thesis": "Every reading measured against a ten-division etched graticule, with detented knobs for timebase and trigger.",
+      "palette": ["#0B0F0C", "#38F05C", "#2A3A2E", "#E8A32B"],
+      "materials": ["phosphor on near-black glass", "etched graticule", "knurled knob skirt"],
+      "viewport": "Postgres round-trip riding as a persistent phosphor trace across a square ten-division graticule, poll interval as a detented timebase knob, seven-segment readouts in amber when armed.",
+      "case": "Instrumentation is this audience's true home and the latency trace would be native and beautiful. Fuses poorly overall: a scope has no grammar at all for a paged directory of twenty patient records, and phosphor-green on near-black glass is precisely the near-black-plus-one-neon observability rut this redesign exists to leave.",
+      "risk": "Lands in the exact category default the request asked to remove, and covers only one of four panels.",
+      "hero": "https://impeccable.style/worlds/cards/scientific-notation-oscilloscope-signal-bench-hero.webp"
+    }
+  ],
+  "reroll": true,
+  "canon": true,
+  "canonCard": {
+    "label": "The category standard",
+    "lineage": "Grafana by way of Vercel",
+    "thesis": "The observability dashboard every backend ships: near-black ground, one cyan accent, glass metric tiles, gradient sparklines — executed at full craft.",
+    "palette": ["#09090B", "#18181B", "#22D3EE", "#A1A1AA"],
+    "materials": ["glass blur", "rounded-2xl tile", "1px zinc border"],
+    "viewport": "A 4-up row of glass metric cards with big glowing numbers, a gradient area chart beneath, a zinc-bordered table below, and a subtle dot grid behind everything.",
+    "risk": "Indistinguishable from every other backend dashboard, including the one this replaces."
+  },
+  "steer": true
+}

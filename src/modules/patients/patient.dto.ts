@@ -1,9 +1,10 @@
 import { z } from 'zod'
-import { Gender, BloodType } from '@prisma/client'
+import { Gender, BloodType, PatientStatus } from '@prisma/client'
 import { baseQuerySchema } from '@/shared/types/pagination.type'
 
 export const genderEnumSchema = z.nativeEnum(Gender)
 export const bloodTypeEnumSchema = z.nativeEnum(BloodType)
+export const patientStatusEnumSchema = z.nativeEnum(PatientStatus)
 
 export const PATIENT_SORTABLE_FIELDS = [
   'createdAt',
@@ -14,6 +15,7 @@ export const PATIENT_SORTABLE_FIELDS = [
   'medicalRecordNumber',
   'gender',
   'bloodType',
+  'status',
 ] as const
 export type PatientSortableField = (typeof PATIENT_SORTABLE_FIELDS)[number]
 
@@ -25,6 +27,7 @@ export const createPatientSchema = z.object({
   dateOfBirth: z.coerce.date({ message: 'Valid date of birth is required' }),
   gender: genderEnumSchema.optional().default(Gender.UNKNOWN),
   bloodType: bloodTypeEnumSchema.optional().default(BloodType.UNKNOWN),
+  status: patientStatusEnumSchema.optional().default(PatientStatus.ACTIVE),
   address: z.string().optional(),
   emergencyContactName: z.string().optional(),
   emergencyContactPhone: z.string().optional(),
@@ -36,6 +39,7 @@ export const updatePatientSchema = createPatientSchema.partial()
 export const patientQuerySchema = baseQuerySchema.extend({
   gender: genderEnumSchema.optional(),
   bloodType: bloodTypeEnumSchema.optional(),
+  status: patientStatusEnumSchema.optional(),
 })
 
 export type CreatePatientDto = z.input<typeof createPatientSchema>
@@ -52,6 +56,7 @@ export interface PatientResponseDto {
   dateOfBirth: Date
   gender: Gender
   bloodType: BloodType
+  status: PatientStatus
   address: string | null
   emergencyContactName: string | null
   emergencyContactPhone: string | null

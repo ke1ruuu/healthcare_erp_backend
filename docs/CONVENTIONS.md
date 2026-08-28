@@ -100,11 +100,11 @@ Every domain module is strictly divided into four distinct layers:
 
 | Layer | File Pattern | Responsibilities | Forbidden Patterns |
 |---|---|---|---|
-| **Route** | `<domain>.route.ts` | Declares URL paths, HTTP verbs, attaches auth/role middlewares, and mounts to controller methods. | ❌ No business logic.<br>❌ No direct service calls. |
-| **API / Controller** | `<domain>.controller.ts` | Receives Hono `Context`, parses request params/body/query, invokes Application Service, and returns standardized response envelopes. | ❌ No database/Prisma queries.<br>❌ No domain business logic calculations. |
-| **Application Service** | `<domain>.service.ts` | Orchestrates domain operations, coordinates database transactions, invokes repositories, triggers audit logs, and handles business validation. | ❌ Never references Hono `Context` (`c`).<br>❌ Never imports another module's repository directly. |
-| **Repository** | `<domain>.repository.ts` | Encapsulates all Prisma ORM database queries (`create`, `findUnique`, `findMany`, `update`, `delete`, soft-delete). Returns plain data objects. | ❌ No HTTP or routing logic.<br>❌ No business decision rules. |
-| **DTO / Schema** | `<domain>.dto.ts` | Defines Zod validation schemas and TypeScript types for input and output data contracts. | ❌ No database queries or side effects. |
+| **Route** | `<domain>.route.ts` | Declares URL paths, HTTP verbs, attaches auth/role middlewares, and mounts to controller methods. | [Forbidden] No business logic.<br>[Forbidden] No direct service calls. |
+| **API / Controller** | `<domain>.controller.ts` | Receives Hono `Context`, parses request params/body/query, invokes Application Service, and returns standardized response envelopes. | [Forbidden] No database/Prisma queries.<br>[Forbidden] No domain business logic calculations. |
+| **Application Service** | `<domain>.service.ts` | Orchestrates domain operations, coordinates database transactions, invokes repositories, triggers audit logs, and handles business validation. | [Forbidden] Never references Hono `Context` (`c`).<br>[Forbidden] Never imports another module's repository directly. |
+| **Repository** | `<domain>.repository.ts` | Encapsulates all Prisma ORM database queries (`create`, `findUnique`, `findMany`, `update`, `delete`, soft-delete). Returns plain data objects. | [Forbidden] No HTTP or routing logic.<br>[Forbidden] No business decision rules. |
+| **DTO / Schema** | `<domain>.dto.ts` | Defines Zod validation schemas and TypeScript types for input and output data contracts. | [Forbidden] No database queries or side effects. |
 
 ---
 
@@ -155,25 +155,80 @@ All files must follow **`kebab-case`** with a descriptive role suffix:
 
 ## 5. Prisma & Database Conventions
 
-### Schema Guidelines
-1. **Model Names**: `PascalCase` singular (e.g. `User`, `Patient`, `MedicalRecord`, `Prescription`).
-2. **Table Names (`@@map`)**: `snake_case` plural (e.g. `@@map("users")`, `@@map("medical_records")`).
-3. **Field Names**: `camelCase` in Prisma schema, mapped to `snake_case` in SQL via `@map`:
-   ```prisma
-   model MedicalRecord {
-     id           String    @id @default(uuid())
-     patientId    String    @map("patient_id")
-     diagnosis    String
-     createdAt    DateTime  @default(now()) @map("created_at")
-     updatedAt    DateTime  @updatedAt @map("updated_at")
-     deletedAt    DateTime? @map("deleted_at")
+### 5.1 Common Identifiers Convention
 
-     @@map("medical_records")
-   }
+Healthcare systems require a strict separation between **Internal Database Primary Keys** and **Human-Readable Business Identifiers**:
+
+1. **Internal Primary Keys (System IDs)**:
+   - Always use **UUID v4** (`String @id @default(uuid())`).
+   - Globally unique, non-sequential, and unpredictable to prevent enumeration attacks and HIPAA metadata leakage.
+   - Example: `9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d`
+
+2. **Human-Readable Business Identifiers**:
+   - Used in patient wristbands, printed prescriptions, invoices, and clinical communication.
+   - Structured pattern: `PREFIX-YYYYMMDD-XXXX` (where `XXXX` is a randomized or sequence counter).
+   - Standard domain prefixes:
+     | Domain | Prefix | Example | Description |
+     |---|---|---|---|
+     | **Patients** | `MRN` | `MRN-20260828-4821` | Master Patient Index (Medical Record Number) |
+     | **Appointments**| `APT` | `APT-20260828-1044` | Clinical booking identifier |
+     | **Invoices / Billing** | `INV` | `INV-20260828-9201` | Financial billing invoice |
+     | **Prescriptions** | `RX` | `RX-20260828-3310` | Pharmacy order number |
+     | **Lab Tests** | `LAB` | `LAB-20260828-7019` | Laboratory diagnostic order |
+
+---
+
+### 5.2 Timestamp Conventions
+
+All database tables must adhere to standard audit and temporal conventions:
+
+1. **Standard Audit Columns**:
+   ```prisma
+   createdAt    DateTime  @default(now()) @map("created_at")
+   updatedAt    DateTime  @updatedAt @map("updated_at")
+   deletedAt    DateTime? @map("deleted_at")
    ```
-4. **Primary Keys**: Use UUIDv4 (`@default(uuid())`) or CUID for distributed safety.
-5. **Foreign Keys**: Always indexed (`@@index([patientId])`) for performant join queries.
-6. **Audit Timestamps**: Every table must have `createdAt` and `updatedAt`. Tables holding clinical or transactional data must include `deletedAt` for soft deletes.
+2. **UTC ISO 8601 Storage**:
+   - All dates and timestamps are stored in UTC (`TIMESTAMPTZ` in PostgreSQL).
+   - APIs serialize dates as ISO 8601 strings (`2026-08-28T15:47:00.000Z`).
+3. **Soft Deletion Policy**:
+   - Healthcare ERP data must **never be hard-deleted** from production databases for medical audit and regulatory compliance (HIPAA / GDPR).
+   - Soft deletion sets `deletedAt = new Date()`.
+   - All standard service queries must include `where: { deletedAt: null }`.
+   - Tables with soft deletion must include `@@index([deletedAt])` for query optimization.
+
+---
+
+### 5.3 Status Conventions
+
+Every stateful domain model must manage lifecycle states through strongly typed Enums:
+
+1. **Lifecycle State Enums**:
+   - `UserStatus`: `ACTIVE`, `INACTIVE`, `SUSPENDED`
+   - `PatientStatus`: `ACTIVE`, `INACTIVE`, `DECEASED`, `TRANSFERRED`
+   - `AppointmentStatus`: `SCHEDULED`, `CONFIRMED`, `IN_PROGRESS`, `COMPLETED`, `CANCELLED`, `NO_SHOW`
+   - `BillingStatus`: `DRAFT`, `PENDING_INSURANCE`, `PAID`, `OVERDUE`, `VOID`
+2. **Default Status Rule**:
+   - Newly created records must default to `ACTIVE` (or `DRAFT` / `SCHEDULED` for workflows requiring confirmation).
+3. **State Transition Validation**:
+   - Status changes must be validated in domain application services.
+   - Significant status transitions (e.g. `SUSPENDED`, `DECEASED`, `CANCELLED`) must create an immutable entry in `audit_logs`.
+4. **Performance Indexing**:
+   - Always index status fields (`@@index([status])`).
+
+---
+
+### 5.4 Database Column & Table Naming Conventions
+
+1. **Model Names**: `PascalCase` singular (`User`, `Patient`, `AuditLog`).
+2. **Table Names (`@@map`)**: `snake_case` plural (`@@map("users")`, `@@map("patients")`, `@@map("audit_logs")`).
+3. **Column Names (`@map`)**: `camelCase` in TypeScript/Prisma, mapped to `snake_case` in PostgreSQL:
+   ```prisma
+   medicalRecordNumber   String   @unique @map("medical_record_number")
+   passwordHash          String   @map("password_hash")
+   dateOfBirth           DateTime @map("date_of_birth")
+   ```
+4. **Foreign Keys**: Always indexed for performant relational queries (`@@index([userId])`, `@@index([patientId])`).
 
 ---
 

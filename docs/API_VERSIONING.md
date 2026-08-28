@@ -91,7 +91,7 @@ In an enterprise Healthcare ERP, breaking changes affect hospital workstations, 
                                └───────────────────────┘             └───────────────────────┘
 ```
 
-### ✅ When to STAY on `v1` (Additive Evolution)
+### When to STAY on v1 (Additive Evolution)
 Stay on `v1` for any change that existing clients can safely ignore:
 1. **Adding New Modules**: Launching `appointments`, `clinical`, `pharmacy`, `billing`, `laboratory`, etc.
 2. **Adding New Endpoints**: e.g., `POST /api/v1/patients/batch`, `GET /api/v1/users/stats`.
@@ -102,7 +102,7 @@ Stay on `v1` for any change that existing clients can safely ignore:
 
 ---
 
-### 🚨 When to PROCEED to `v2` (Breaking Changes Only)
+### When to PROCEED to v2 (Breaking Changes Only)
 Proceed to `v2` **ONLY** when a change would cause existing production clients to fail:
 1. **Renaming / Removing Required Request Fields**:
    - e.g., changing `{ firstName, lastName }` to a mandatory `{ fullName }` or requiring a new `nationalInsuranceNumber` on patient creation without fallback.

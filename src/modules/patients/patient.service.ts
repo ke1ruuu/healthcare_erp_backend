@@ -1,4 +1,4 @@
-import { type Patient, type Prisma, Gender, BloodType } from '@prisma/client'
+import { type Patient, type Prisma, Gender, BloodType, PatientStatus } from '@prisma/client'
 import {
   type IPatientRepository,
   patientRepository,
@@ -64,6 +64,7 @@ export class PatientService {
         take,
         gender: query.gender,
         bloodType: query.bloodType,
+        status: query.status,
         search: query.search,
         sortBy: query.sortBy as any,
         sortOrder: query.sortOrder as any,
@@ -73,6 +74,7 @@ export class PatientService {
       this.patientRepo.count({
         gender: query.gender,
         bloodType: query.bloodType,
+        status: query.status,
         search: query.search,
         startDate: query.startDate,
         endDate: query.endDate,
@@ -116,6 +118,7 @@ export class PatientService {
       dateOfBirth: new Date(data.dateOfBirth),
       gender: data.gender ?? Gender.UNKNOWN,
       bloodType: data.bloodType ?? BloodType.UNKNOWN,
+      status: data.status ?? PatientStatus.ACTIVE,
       address: data.address || null,
       emergencyContactName: data.emergencyContactName || null,
       emergencyContactPhone: data.emergencyContactPhone || null,
@@ -133,6 +136,7 @@ export class PatientService {
         medicalRecordNumber: patient.medicalRecordNumber,
         gender: patient.gender,
         bloodType: patient.bloodType,
+        status: patient.status,
       },
     })
 
@@ -172,6 +176,7 @@ export class PatientService {
       ...(data.dateOfBirth && { dateOfBirth: new Date(data.dateOfBirth) }),
       ...(data.gender && { gender: data.gender }),
       ...(data.bloodType && { bloodType: data.bloodType }),
+      ...(data.status && { status: data.status }),
       ...(data.address !== undefined && { address: data.address || null }),
       ...(data.emergencyContactName !== undefined && {
         emergencyContactName: data.emergencyContactName || null,

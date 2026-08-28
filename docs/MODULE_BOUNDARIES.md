@@ -71,20 +71,20 @@ To prevent uncontrolled deep imports and enforce loose coupling, every domain mo
 
 ```
 src/modules/patients/
-├── index.ts              # 🟢 PUBLIC API (Only exports Service, Route, Public DTOs)
-├── patient.service.ts    # 🟢 PUBLIC (Exported via index.ts)
-├── patient.dto.ts        # 🟢 PUBLIC (Exported via index.ts)
-├── patient.route.ts      # 🟢 PUBLIC (Exported via index.ts for main router)
-├── patient.controller.ts # 🔴 PRIVATE INTERNAL (Never exported)
-└── patient.repository.ts # 🔴 PRIVATE INTERNAL (Never exported)
+├── index.ts              # [PUBLIC API] (Only exports Service, Route, Public DTOs)
+├── patient.service.ts    # [PUBLIC] (Exported via index.ts)
+├── patient.dto.ts        # [PUBLIC] (Exported via index.ts)
+├── patient.route.ts      # [PUBLIC] (Exported via index.ts for main router)
+├── patient.controller.ts # [PRIVATE INTERNAL] (Never exported)
+└── patient.repository.ts # [PRIVATE INTERNAL] (Never exported)
 ```
 
 ### Import Rules:
 ```ts
-// ✅ CORRECT: Import from the public module entrypoint
+// [CORRECT]: Import from the public module entrypoint
 import { patientService, type PatientResponseDto } from '@/modules/patients'
 
-// ❌ FORBIDDEN: Deep-importing internal module files
+// [FORBIDDEN]: Deep-importing internal module files
 import { patientRepository } from '@/modules/patients/patient.repository'
 import { patientController } from '@/modules/patients/patient.controller'
 ```
