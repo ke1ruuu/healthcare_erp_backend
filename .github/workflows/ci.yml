@@ -119,6 +119,9 @@ jobs:
       - name: Deploy database migrations
         run: bun run db:migrate:deploy
 
+      - name: Seed test database
+        run: bun run db:seed
+
       - name: Run tests
         run: bun test
 
