@@ -46,7 +46,7 @@ telemetryRoute.get('/', async (c) => {
     data: {
       system: {
         name: 'Healthcare ERP Backend',
-        version: '1.0.2',
+        version: '1.0.4',
         environment: env.NODE_ENV,
         port: env.PORT,
         uptimeSeconds: Math.floor(process.uptime()),

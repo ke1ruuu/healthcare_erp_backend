@@ -315,4 +315,157 @@ describe('PostgreSQL Database Configuration & Conventions', () => {
       expect(initMigration?.finished_at).not.toBeNull()
     })
   })
+
+  describe('Development Seed Data Verification (100 Records/Table)', () => {
+    it('should verify at least 100 seed records exist in Users table', async () => {
+      const count = await prisma.user.count()
+      expect(count).toBeGreaterThanOrEqual(100)
+    })
+
+    it('should verify at least 100 seed records exist in Patients table', async () => {
+      const count = await prisma.patient.count()
+      expect(count).toBeGreaterThanOrEqual(100)
+    })
+
+    it('should verify at least 100 seed records exist in Audit Logs table', async () => {
+      const count = await prisma.auditLog.count()
+      expect(count).toBeGreaterThanOrEqual(100)
+    })
+  })
+
+  describe('Database Transaction Conventions & Atomicity', () => {
+    it('should execute multi-table interactive transaction atomically', async () => {
+      const testEmail = `tx-user-${Date.now()}@hospital.org`
+      const testMrn = `MRN-TX-${Date.now()}`
+
+      const txResult = await prisma.$transaction(async (tx) => {
+        const user = await tx.user.create({
+          data: {
+            email: testEmail,
+            passwordHash: 'dummy_hash',
+            firstName: 'Transaction',
+            lastName: 'User',
+            role: Role.DOCTOR,
+          },
+        })
+
+        const patient = await tx.patient.create({
+          data: {
+            medicalRecordNumber: testMrn,
+            firstName: 'Transaction',
+            lastName: 'Patient',
+            dateOfBirth: new Date('1992-06-15'),
+            gender: Gender.FEMALE,
+          },
+        })
+
+        const audit = await tx.auditLog.create({
+          data: {
+            userId: user.id,
+            action: 'TX_ATOMIC_CREATE',
+            entity: 'Patient',
+            entityId: patient.id,
+            details: { test: true },
+          },
+        })
+
+        return { user, patient, audit }
+      })
+
+      expect(txResult.user.id).toBeDefined()
+      expect(txResult.patient.id).toBeDefined()
+      expect(txResult.audit.id).toBeDefined()
+
+      // Cleanup
+      await prisma.auditLog.delete({ where: { id: txResult.audit.id } })
+      await prisma.patient.delete({ where: { id: txResult.patient.id } })
+      await prisma.user.delete({ where: { id: txResult.user.id } })
+    })
+
+    it('should rollback all changes when an exception is thrown inside an interactive transaction', async () => {
+      const testEmail = `tx-rollback-${Date.now()}@hospital.org`
+      const testMrn = `MRN-ROLLBACK-${Date.now()}`
+
+      let caughtError: Error | null = null
+
+      try {
+        await prisma.$transaction(async (tx) => {
+          // 1. First write: create user
+          await tx.user.create({
+            data: {
+              email: testEmail,
+              passwordHash: 'dummy_hash',
+              firstName: 'Rollback',
+              lastName: 'User',
+              role: Role.NURSE,
+            },
+          })
+
+          // 2. Second write: create patient
+          await tx.patient.create({
+            data: {
+              medicalRecordNumber: testMrn,
+              firstName: 'Rollback',
+              lastName: 'Patient',
+              dateOfBirth: new Date('1980-01-01'),
+            },
+          })
+
+          // 3. Deliberate failure triggering rollback
+          throw new Error('SIMULATED_TRANSACTION_FAILURE')
+        })
+      } catch (err: any) {
+        caughtError = err
+      }
+
+      expect(caughtError).toBeDefined()
+      expect(caughtError?.message).toBe('SIMULATED_TRANSACTION_FAILURE')
+
+      // Verify that neither the user nor the patient was committed to PostgreSQL
+      const uncommittedUser = await prisma.user.findUnique({
+        where: { email: testEmail },
+      })
+      const uncommittedPatient = await prisma.patient.findUnique({
+        where: { medicalRecordNumber: testMrn },
+      })
+
+      expect(uncommittedUser).toBeNull()
+      expect(uncommittedPatient).toBeNull()
+    })
+
+    it('should execute sequential batch transaction atomically', async () => {
+      const email1 = `batch-1-${Date.now()}@hospital.org`
+      const email2 = `batch-2-${Date.now()}@hospital.org`
+
+      const results = await prisma.$transaction([
+        prisma.user.create({
+          data: {
+            email: email1,
+            passwordHash: 'dummy_hash',
+            firstName: 'BatchOne',
+            lastName: 'Tester',
+            role: Role.RECEPTIONIST,
+          },
+        }),
+        prisma.user.create({
+          data: {
+            email: email2,
+            passwordHash: 'dummy_hash',
+            firstName: 'BatchTwo',
+            lastName: 'Tester',
+            role: Role.RECEPTIONIST,
+          },
+        }),
+      ])
+
+      expect(results.length).toBe(2)
+      expect(results[0].email).toBe(email1)
+      expect(results[1].email).toBe(email2)
+
+      // Cleanup
+      await prisma.user.deleteMany({
+        where: { email: { in: [email1, email2] } },
+      })
+    })
+  })
 })

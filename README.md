@@ -13,7 +13,7 @@ A backend API for a Healthcare Enterprise Resource Planning (ERP) system, built 
 - [**Module Boundaries & Dependency Rules**](docs/MODULE_BOUNDARIES.md) — Domain taxonomy, ownership matrix, unidirectional dependency graph, and inter-module communication rules.
 - [**API Versioning Strategy & Route Registration**](docs/API_VERSIONING.md) — API root discovery, URI versioning (`/api/v1`), route aggregation, and deprecation policies.
 - [**Database Migrations & Schema Evolution**](docs/DATABASE_MIGRATIONS.md) — Prisma migration lifecycle, zero-downtime expand-contract strategy, and production deployments.
-- [**Changelog & Releases**](CHANGELOG.md) — Version history and release notes ([v1.0.3 Changelog](changelogs/v1.0.3.md) / [v1.0.2 Changelog](changelogs/v1.0.2.md) / [v1.0.1 Changelog](changelogs/v1.0.1.md)).
+- [**Changelog & Releases**](CHANGELOG.md) — Version history and release notes ([v1.0.4 Changelog](changelogs/v1.0.4.md) / [v1.0.3 Changelog](changelogs/v1.0.3.md) / [v1.0.2 Changelog](changelogs/v1.0.2.md) / [v1.0.1 Changelog](changelogs/v1.0.1.md)).
 
 ---
 

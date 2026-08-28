@@ -5,9 +5,9 @@ export const openApiSpec = {
   openapi: '3.1.0',
   info: {
     title: 'Healthcare ERP Backend API',
-    version: '1.0.3',
+    version: '1.0.4',
     description:
-      'Enterprise Resource Planning (ERP) Backend API for healthcare systems, hospitals, and clinics. Built with Bun, Hono, and Prisma ORM following a Modular-Monolith architecture with 4-tier layer isolation, strict domain boundaries, URI versioning (/api/v1), centralized error handling, request validation, structured correlation IDs (X-Request-ID), standardized pagination/sorting/filtering/searching, and live telemetry monitoring.',
+      'Enterprise Resource Planning (ERP) Backend API for healthcare systems, hospitals, and clinics. Built with Bun, Hono, and Prisma PostgreSQL following a Modular-Monolith architecture with 4-tier layer isolation, strict domain boundaries, URI versioning (/api/v1), centralized error handling, request validation, structured correlation IDs (X-Request-ID), standardized pagination/sorting/filtering/searching, database migrations, 100-record seed data, atomic transaction conventions, and live telemetry monitoring.',
     contact: {
       name: 'Healthcare ERP Engineering Team',
     },

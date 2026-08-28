@@ -1,6 +1,6 @@
 # Build brief — dashboard visual world replacement
 
-**Status:** direction locked, build not started. Resume from step 1 below.
+**Status:** build IN PROGRESS — CSS spine and favicon done, contract/shell/panels remain. **Read "Resume state" at the bottom of this file first.**
 **Seed key:** `efa2b6fa` · **Scope:** direction · **Mode:** operate
 **Chosen:** `{"optionId":"assigned","steer":""}` — the assigned card, taken as dealt, no steer.
 **Skill base dir:** `/Users/keiru/.claude/skills/impeccable` (NOT vendored in this repo — always use the absolute path for scripts).

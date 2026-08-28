@@ -8,6 +8,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## Releases
 
+### [v1.0.4](changelogs/v1.0.4.md) — 2026-08-28
+- **PostgreSQL Connection**: Configured persistent PostgreSQL connection with singleton client pool and `scripts/setup-db.ts` health probing.
+- **Common Identifiers**: Enforced UUID v4 primary keys and formatted Medical Record Numbers (`MRN-YYYYMMDD-XXXX`).
+- **Timestamp Conventions**: Standardized UTC timestamps across all models (`createdAt`, `updatedAt`, `deletedAt`).
+- **Status Conventions**: Implemented `UserStatus` and `PatientStatus` enums with dedicated index coverage.
+- **Foreign-Key Conventions**: Configured `SetNull` referential actions on audit logs and `Restrict` on clinical dependencies.
+- **Soft-Delete Strategy**: Standardized `deletedAt` filtering (`where: { deletedAt: null }`), audit trail emission, and regulatory compliance (HIPAA / GDPR).
+- **Indexing Conventions**: Enforced mandatory indexes on foreign keys, status fields, soft-delete timestamps, and multi-column search indexes.
+- **Unique Constraints**: Configured business key uniqueness for user emails and patient MRNs with automatic Prisma `P2002` error conversion.
+- **Database Migration Workflow**: Established versioned Prisma migration lifecycle (`db:migrate`, `db:migrate:deploy`, `db:migrate:status`, `db:migrate:reset`).
+- **Initial Migration**: Created baseline SQL migration (`20260828000000_init_healthcare_erp_schema`).
+- **Development Seed Data**: Generated 100+ realistic records per table (108 users, 106 patients, 100 audit logs) in `prisma/seed.ts`.
+- **Test Seed Data & Verification**: Added automated tests verifying seed volume and database catalog index presence.
+- **Database Transaction Conventions**: Defined Section 5.9 for interactive and sequential batch transactions with atomicity and rollback verification.
+- **Automated Sequential Launcher**: Created `launch.sh` / `launch.bat` with active process conflict detection and port remediation.
+- **Monitoring Dashboard UI Improvements**: Revamped React 19 + Vite dashboard with dark command deck design system, dual-trace Canvas charts, and multi-zone navigation.
+- **OpenAPI 3.1 & Swagger UI**: Updated documentation to version `1.0.4`.
+
 ### [v1.0.3](changelogs/v1.0.3.md) — 2026-08-27
 - **API Root & URI Versioning**: Created root discovery (`GET /`), version aggregator (`GET /api/v1`), and central route registrar (`src/routes/index.ts`).
 - **Breaking Change Detection**: Implemented `scripts/check-api-drift.ts` (`bun run check:api-drift`) enforcing contract backward compatibility.

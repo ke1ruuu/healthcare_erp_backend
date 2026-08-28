@@ -1,1634 +1,1139 @@
-/* ============================================================================
-   SIGNAL BENCH — the visual world of this monitoring surface.
+/* ==========================================================================
+   Checked — the compiler diagnostic read as a designed publication.
+   seed efa2b6fa
 
-   A CRT bench oscilloscope. Values are measured against an etched graticule,
-   set with detented controls, and read off authored seven-segment displays.
-   One P31 phosphor: channels separate by trace POSITION and INTENSITY, never
-   by hue. Amber means armed or advisory. Orange means fault. Green is only
-   ever emitted, measured data — never a costume for "technical".
+   Rules this file holds to, without exception:
+     · Severity is the only chroma. No accent, no brand hue, no decorative tint.
+     · Colour is never the sole signal — every severity also states its keyword.
+     · If it was measured, it is monospaced. Chivo Mono is reserved for that.
+     · Two type sizes only (--t-body, --t-key). Rank by weight, case and rule.
+     · Zero border boxes, zero shadows, zero radius. Hairline rules only.
+   ========================================================================== */
 
-   Square corners throughout. Circles are reserved for things that physically
-   rotate (knobs) or emit (lamps).
-   ========================================================================= */
+/* --- tokens --------------------------------------------------------------- */
 
 :root {
-  /* ---- chassis -------------------------------------------------------- */
-  --ground: #080b09; /* bench chassis, page ground */
-  --panel: #10150f; /* matte instrument panel */
-  --bezel: #1a211a; /* raised control face */
-  --bezel-hi: #222b21; /* top-lit edge of a raised face */
-  --glass: #050806; /* CRT glass, the darkest surface in the world */
+  /* The six-colour palette. Nothing else carries colour. */
+  --ground: #dee2dd; /* page field */
+  --sheet: #f4f6f2; /* the bright diagnostic sheet */
+  --ink: #0a2320; /* petrol — type, rules, `note` severity, the left field */
+  --error: #d62511; /* vermilion — fault states only */
+  --help: #1b4fd0; /* cobalt — `= help:` rows, commands the reader can run */
+  --warn: #8f6100; /* ochre — declared-not-verified, over-scale readings */
 
-  /* ---- etched lines (decorative only — never text) -------------------- */
-  --gratic: #26331f; /* minor division */
-  --gratic-maj: #2e4028; /* major division */
-  --hair: #34432e; /* panel hairline, enclosure border */
-  --hair-lit: #3e5136; /* lit hairline, top edge of a bezel */
+  /* Petrol at reading strengths on the sheet. Secondary text is tinted from
+     the ink hue, never grey. Every value below clears 4.5:1 on --sheet. */
+  --ink-2: color-mix(in oklab, var(--ink) 74%, var(--sheet)); /* ~9.4:1 */
+  --ink-3: color-mix(in oklab, var(--ink) 62%, var(--sheet)); /* ~6.2:1 */
+  --rule: color-mix(in oklab, var(--ink) 22%, var(--sheet));
+  --rule-hard: color-mix(in oklab, var(--ink) 46%, var(--sheet));
+  --wash: color-mix(in oklab, var(--ink) 6%, var(--sheet));
+  --wash-2: color-mix(in oklab, var(--ink) 11%, var(--sheet));
 
-  /* ---- phosphor (AA-verified on --panel; see DESIGN.md) --------------- */
-  --phos-hot: #39ff14; /* 13.63:1 — beam core, lit lamp, live digit */
-  --phos: #5bf43a; /* 12.71:1 — trace, measured values */
-  --phos-key: #79e85f; /* 11.90:1 — headings, nomenclature that matters */
-  --ink: #9ad98a; /* 11.15:1 — prose */
-  --ink-2: #7bae6e; /*  7.15:1 — silkscreen labels */
-  --ink-3: #6e9c63; /*  5.81:1 — tertiary, unlit legends */
+  /* The same severity hues re-tuned for the petrol field, where the dark
+     ground would otherwise drop them under 4.5:1. Same hue, adapted ground. */
+  --on-field: var(--sheet);
+  --on-field-2: color-mix(in oklab, var(--sheet) 70%, var(--ink)); /* ~8.4:1 */
+  --on-field-3: color-mix(in oklab, var(--sheet) 52%, var(--ink)); /* ~5.1:1 */
+  --field-rule: color-mix(in oklab, var(--sheet) 26%, var(--ink));
+  --error-field: #f2543c; /* ~5.0:1 on --ink */
+  --warn-field: #e0a93b; /* ~8.1:1 on --ink */
+  --help-field: #7fa6f5; /* ~7.1:1 on --ink */
 
-  /* ---- state ---------------------------------------------------------- */
-  --amber: #ffb000; /* 10.09:1 — armed, advisory, focus */
-  --warn: #ff7a38; /*  7.12:1 — fault text */
-  --warn-rule: #ff5a00; /*  5.91:1 — fault rules and fills */
-  --ch2: #45e3a0; /* 11.22:1 — CH2 nomenclature only */
-  --ch2-trace: #2fd38c; /*  9.52:1 — CH2 beam */
-  --dark-ink: #080b09; /* on a phosphor fill: 10.79–14.58:1 */
+  /* Two sizes. That is the whole scale. */
+  --t-body: 0.90625rem; /* 14.5px — every label, value, caret, cell and row */
+  --t-key: clamp(1.85rem, 3.5vw, 2.9rem); /* the severity keyword line */
 
-  /* ---- type ----------------------------------------------------------- */
-  --sil: 'Saira', 'Roboto Condensed', 'Arial Narrow', sans-serif;
-  --mono: 'Martian Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+  --f-sans: 'Chivo', 'Helvetica Neue', Arial, sans-serif;
+  --f-mono: 'Chivo Mono', ui-monospace, 'SF Mono', Menlo, monospace;
 
-  --lift: 0 1px 0 0 var(--hair-lit) inset, 0 -1px 0 0 #0a0e09 inset;
-  --sunk: 0 1px 3px 0 #000 inset, 0 0 0 1px #05070500;
+  --field-w: 16.5rem; /* the petrol check field */
+  --gut-w: 3.25rem; /* the numbered gutter */
+  --label-w: 11.5rem; /* label column — carets align under values because of it */
+  --pad: clamp(1.35rem, 3.2vw, 3rem);
 
-  color-scheme: dark;
+  /* Exponential ease-out, from an already-visible default. */
+  --sweep: 180ms cubic-bezier(0.16, 1, 0.3, 1);
+
+  color-scheme: light;
+  accent-color: var(--ink);
 }
 
-/* Slotted panel fixing, used at the four chassis corners. */
-:root {
-  --screw: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='13' height='13'%3E%3Ccircle cx='6.5' cy='6.5' r='5' fill='%231a211a' stroke='%2334432e' stroke-width='1'/%3E%3Cpath d='M3.6 8.4 L9.4 4.6' stroke='%23080b09' stroke-width='1.6' stroke-linecap='round'/%3E%3C/svg%3E");
-}
+/* --- reset ---------------------------------------------------------------- */
 
 *,
 *::before,
 *::after {
   box-sizing: border-box;
+  border-radius: 0; /* not one radius on this page */
+}
+
+* {
+  margin: 0;
 }
 
 html {
-  background: var(--ground);
+  -webkit-text-size-adjust: 100%;
+  scrollbar-color: var(--rule-hard) var(--ground);
 }
 
 body {
-  margin: 0;
-  min-height: 100vh;
-  background:
-    /* faint bench light falling from above-left */
-    radial-gradient(140% 90% at 12% -10%, #0e130d 0%, #080b09 55%, #050705 100%);
+  background: var(--ground);
   color: var(--ink);
-  font-family: var(--sil);
-  font-variation-settings: 'wdth' 100, 'wght' 400;
-  font-size: 13px;
+  font-family: var(--f-sans);
+  font-size: var(--t-body);
+  font-weight: 400;
   line-height: 1.55;
+  font-synthesis: none;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
 
+/* --- browser surfaces ----------------------------------------------------- */
+
 ::selection {
-  background: var(--phos-hot);
-  color: var(--dark-ink);
+  background: var(--ink);
+  color: var(--sheet);
+}
+
+.field ::selection {
+  background: var(--sheet);
+  color: var(--ink);
+}
+
+/* The text caret, in a world built on carets. */
+input,
+select,
+textarea,
+[contenteditable] {
+  caret-color: var(--error);
 }
 
 :focus-visible {
-  outline: 2px solid var(--amber);
+  outline: 2px solid currentColor;
   outline-offset: 2px;
 }
 
-h1,
-h2,
-h3,
-p {
-  margin: 0;
-}
-
-a {
-  color: var(--phos-key);
-  text-decoration-color: color-mix(in srgb, var(--phos-key) 45%, transparent);
-  text-underline-offset: 3px;
-}
-
-a:hover {
-  color: var(--phos-hot);
-  text-decoration-color: currentColor;
-}
-
-/* ============================================================================
-   TYPE PRIMITIVES
-   ========================================================================= */
-
-/* Silkscreen nomenclature — engraved onto the panel, never a measurement. */
-.nom {
-  font-family: var(--sil);
-  font-variation-settings: 'wdth' 78, 'wght' 650;
-  font-size: 10px;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: var(--ink-2);
-  line-height: 1.2;
-}
-
-.nom-xs {
-  font-size: 9px;
-  letter-spacing: 0.2em;
-}
-
-.nom-key {
-  color: var(--phos-key);
-  font-variation-settings: 'wdth' 82, 'wght' 700;
-  font-size: 12px;
-  letter-spacing: 0.18em;
-}
-
-/* A measured value. Monospaced because columns of numbers must align. */
-.val {
-  font-family: var(--mono);
-  font-variation-settings: 'wdth' 87.5, 'wght' 450;
-  font-size: 12px;
-  letter-spacing: -0.01em;
-  color: var(--phos);
-  font-variant-numeric: tabular-nums;
-}
-
-.val-sm {
-  font-size: 10.5px;
-  font-variation-settings: 'wdth' 87.5, 'wght' 400;
-  color: var(--ink);
-}
-
-.val-hot {
-  color: var(--phos-hot);
-}
-
-.unit {
-  font-family: var(--sil);
-  font-variation-settings: 'wdth' 80, 'wght' 600;
-  font-size: 0.68em;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--ink-3);
-  margin-left: 0.35em;
-}
-
-.prose {
-  color: var(--ink);
-  font-size: 13px;
-  line-height: 1.6;
-  max-width: 68ch;
-}
-
-.prose-dim {
-  color: var(--ink-2);
-  font-size: 12px;
-  line-height: 1.6;
-  max-width: 72ch;
-}
-
-/* Dot-matrix: a real dot grid punched through heavy caps by a mask. */
-.dm {
-  display: inline-block;
-  font-family: var(--sil);
-  font-variation-settings: 'wdth' 100, 'wght' 800;
-  font-size: 21px;
-  line-height: 1;
-  letter-spacing: 0.045em;
-  text-transform: uppercase;
-  color: var(--phos-hot);
-  -webkit-mask-image: radial-gradient(circle at 50% 50%, #000 41%, transparent 45%);
-  mask-image: radial-gradient(circle at 50% 50%, #000 41%, transparent 45%);
-  -webkit-mask-size: 3px 3px;
-  mask-size: 3px 3px;
-  -webkit-mask-repeat: repeat;
-  mask-repeat: repeat;
-}
-
-/* ============================================================================
-   CHASSIS
-   ========================================================================= */
-
-.bench {
-  padding: 26px 22px 40px;
-  max-width: 1420px;
-  margin: 0 auto;
-}
-
-.inst {
-  position: relative;
-  background: var(--panel);
-  border: 1px solid var(--hair);
-  box-shadow:
-    0 0 0 1px #000,
-    0 1px 0 0 var(--hair-lit) inset,
-    0 44px 130px -50px #000;
-  background-image: var(--screw), var(--screw), var(--screw), var(--screw);
-  background-position: 9px 9px, right 9px top 9px, 9px calc(100% - 9px), right 9px bottom 9px;
-  background-repeat: no-repeat;
-}
-
-/* ---- top bezel: identity + always-live channel readouts --------------- */
-
-.bezel-top {
-  display: grid;
-  grid-template-columns: minmax(230px, auto) 1fr;
-  gap: 20px 28px;
-  align-items: center;
-  padding: 18px 30px 17px;
-  background: linear-gradient(to bottom, var(--bezel) 0%, #151b14 100%);
-  border-bottom: 1px solid #050705;
-  box-shadow: 0 1px 0 0 var(--hair-lit) inset;
-}
-
-.ident {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-}
-
-.ident h1 {
-  font: inherit;
-}
-
-.desig {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-
-.desig-model {
-  font-family: var(--mono);
-  font-variation-settings: 'wdth' 87.5, 'wght' 500;
-  font-size: 10px;
-  letter-spacing: 0.06em;
-  color: var(--ink-3);
-}
-
-.desig-sep {
-  width: 1px;
+::-webkit-scrollbar {
+  width: 10px;
   height: 10px;
-  background: var(--hair);
 }
 
-/* Small boxed readouts, sunk into the bezel like panel LCDs. */
-.strip {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 1px;
-  background: var(--hair);
-  border: 1px solid var(--hair);
+::-webkit-scrollbar-track {
+  background: var(--wash);
 }
 
-.rbox {
-  background: var(--glass);
-  padding: 7px 11px 8px;
-  min-width: 0;
-  box-shadow: var(--sunk);
+::-webkit-scrollbar-thumb {
+  background: var(--rule-hard);
+  border: 3px solid var(--sheet);
 }
 
-.rbox-k {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-bottom: 3px;
+::-webkit-scrollbar-thumb:hover {
+  background: var(--ink-3);
 }
 
-.rbox-v {
-  display: flex;
-  align-items: baseline;
-  gap: 1px;
-  font-family: var(--mono);
-  font-variation-settings: 'wdth' 87.5, 'wght' 500;
-  font-size: 14px;
-  letter-spacing: -0.02em;
-  color: var(--phos);
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+.field ::-webkit-scrollbar-track {
+  background: var(--ink);
 }
 
-.rbox[data-ch='2'] .rbox-v {
-  color: var(--ch2);
+.field ::-webkit-scrollbar-thumb {
+  background: var(--field-rule);
+  border: 3px solid var(--ink);
 }
 
-.rbox[data-state='armed'] .rbox-v {
-  color: var(--amber);
-}
-
-.rbox[data-state='fault'] .rbox-v {
-  color: var(--warn);
-}
-
-/* ---- lamps ------------------------------------------------------------ */
-
-.lamp {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  flex: none;
-  background: #0d1a0c;
-  box-shadow: 0 0 0 1px #000 inset;
-}
-
-.lamp[data-on='true'] {
-  background: var(--phos-hot);
-  box-shadow: 0 0 7px 0 color-mix(in srgb, var(--phos-hot) 60%, transparent);
-}
-
-.lamp[data-tone='amber'][data-on='true'] {
-  background: var(--amber);
-  box-shadow: 0 0 7px 0 color-mix(in srgb, var(--amber) 60%, transparent);
-}
-
-.lamp[data-tone='warn'][data-on='true'] {
-  background: var(--warn-rule);
-  box-shadow: 0 0 8px 0 color-mix(in srgb, var(--warn-rule) 65%, transparent);
-  animation: pulse 1.1s steps(2, jump-none) infinite;
-}
-
-.lamp[data-live='true'] {
-  animation: pulse 1.6s ease-in-out infinite;
-}
-
-@keyframes pulse {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.32;
-  }
-}
-
-/* ============================================================================
-   DECK — control rail on the left, working area on the right
-   ========================================================================= */
-
-.deck {
-  display: grid;
-  grid-template-columns: 214px minmax(0, 1fr);
-}
-
-.rail {
-  border-right: 1px solid var(--hair);
-  padding: 18px 16px 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-  background: linear-gradient(to right, #121711, var(--panel));
-}
-
-.work {
-  min-width: 0;
-  padding: 20px 24px 26px;
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-/* ---- enclosures: a hairline box whose legend breaks the border line --- */
-
-.blk {
-  border: 1px solid var(--hair);
-  padding: 14px 15px 15px;
-  margin: 0;
-  min-width: 0;
-  background: transparent;
-}
-
-.blk > legend {
-  padding: 0 7px;
-  margin-left: 7px;
-  font-family: var(--sil);
-  font-variation-settings: 'wdth' 78, 'wght' 650;
-  font-size: 9px;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: var(--ink-2);
-}
-
-.blk-sunk {
-  background: #0c110b;
-  box-shadow: var(--sunk);
-}
-
-/* ---- function selector ------------------------------------------------ */
-
-.fns {
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-  padding: 0;
-}
-
-.fn {
-  appearance: none;
-  display: grid;
-  grid-template-columns: 15px 1fr;
-  gap: 10px;
-  align-items: center;
-  width: 100%;
-  text-align: left;
-  padding: 9px 10px;
-  border: 1px solid var(--hair);
-  background: linear-gradient(to bottom, var(--bezel), #151b14);
-  box-shadow: var(--lift);
-  color: var(--ink-2);
-  cursor: pointer;
-  transition: background 90ms linear, color 90ms linear;
-}
-
-.fn:hover {
-  color: var(--phos-key);
-  background: linear-gradient(to bottom, var(--bezel-hi), #171e16);
-}
-
-.fn-ico {
+::placeholder {
   color: var(--ink-3);
-  transition: color 90ms linear;
-}
-
-.fn:hover .fn-ico {
-  color: var(--phos-key);
-}
-
-.fn-name {
-  font-variation-settings: 'wdth' 80, 'wght' 650;
-  font-size: 11px;
-  letter-spacing: 0.13em;
-  text-transform: uppercase;
-  display: block;
-}
-
-.fn-ref {
-  font-family: var(--mono);
-  font-variation-settings: 'wdth' 87.5, 'wght' 400;
-  font-size: 9px;
-  letter-spacing: 0.02em;
-  color: var(--ink-3);
-  display: block;
-  margin-top: 1px;
-}
-
-/* Depressed pushbutton: sunk, phosphor-filled, dark legend. */
-.fn[aria-selected='true'] {
-  background: var(--phos);
-  border-color: var(--phos-hot);
-  box-shadow: 0 2px 0 0 #0a0e09 inset, 0 0 18px -4px color-mix(in srgb, var(--phos-hot) 55%, transparent);
-  color: var(--dark-ink);
-}
-
-.fn[aria-selected='true'] .fn-ico,
-.fn[aria-selected='true'] .fn-ref {
-  color: color-mix(in srgb, var(--dark-ink) 78%, var(--phos));
-}
-
-/* ---- pushbuttons ----------------------------------------------------- */
-
-.btn {
-  appearance: none;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 7px;
-  padding: 7px 13px;
-  border: 1px solid var(--hair);
-  background: linear-gradient(to bottom, var(--bezel), #151b14);
-  box-shadow: var(--lift);
-  color: var(--ink);
-  font-family: var(--sil);
-  font-variation-settings: 'wdth' 80, 'wght' 650;
-  font-size: 10px;
-  letter-spacing: 0.15em;
-  text-transform: uppercase;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: background 90ms linear, color 90ms linear;
-}
-
-.btn:hover:not(:disabled) {
-  background: linear-gradient(to bottom, var(--bezel-hi), #171e16);
-  color: var(--phos-key);
-  border-color: var(--hair-lit);
-}
-
-.btn:active:not(:disabled) {
-  box-shadow: 0 2px 3px 0 #000 inset;
-  transform: translateY(1px);
-}
-
-.btn:disabled {
-  color: var(--ink-3);
-  cursor: default;
-  opacity: 0.62;
-}
-
-.btn-pri {
-  background: var(--phos);
-  border-color: var(--phos-hot);
-  color: var(--dark-ink);
-  box-shadow: 0 1px 0 0 #b9ffa8 inset, 0 0 18px -6px color-mix(in srgb, var(--phos-hot) 60%, transparent);
-}
-
-.btn-pri:hover:not(:disabled) {
-  background: var(--phos-hot);
-  color: var(--dark-ink);
-}
-
-.btn-lit {
-  background: linear-gradient(to bottom, #2a2513, #201d10);
-  border-color: color-mix(in srgb, var(--amber) 55%, var(--hair));
-  color: var(--amber);
-}
-
-.btn-lit:hover:not(:disabled) {
-  color: var(--amber);
-  border-color: var(--amber);
-}
-
-.btn-wide {
-  width: 100%;
-}
-
-.btn-xs {
-  padding: 5px 9px;
-  font-size: 9px;
-  letter-spacing: 0.13em;
-}
-
-/* ---- knob: a detented rotary control -------------------------------- */
-
-.knob-set {
-  display: flex;
-  align-items: flex-start;
-  gap: 14px;
-}
-
-.knob {
-  position: relative;
-  appearance: none;
-  border: 0;
-  padding: 0;
-  width: 62px;
-  height: 62px;
-  flex: none;
-  border-radius: 50%;
-  cursor: pointer;
-  /* knurled skirt, then a machined cap */
-  background:
-    radial-gradient(circle at 50% 38%, #2b352a 0%, #1c241b 0%, #1b221a 58%, #131912 100%),
-    repeating-conic-gradient(from 0deg, #232c22 0deg 4deg, #171e16 4deg 8deg);
-  box-shadow:
-    0 0 0 1px var(--hair),
-    0 1px 0 0 var(--hair-lit) inset,
-    0 6px 12px -6px #000;
-  transition: box-shadow 120ms linear;
-}
-
-.knob:hover {
-  box-shadow: 0 0 0 1px var(--hair-lit), 0 1px 0 0 #47593d inset, 0 6px 12px -6px #000;
-}
-
-.knob-cap {
-  position: absolute;
-  inset: 9px;
-  border-radius: 50%;
-  background: radial-gradient(circle at 50% 30%, #262f25, #161c15 70%, #101510 100%);
-  box-shadow: 0 0 0 1px #0a0e09, 0 1px 0 0 #3a4a33 inset;
-}
-
-/* The pointer flute, cut into the cap and lit at the tip. It settles into the
-   detent on a firm decelerating curve — a precision control, not a spring. */
-.knob-mark {
-  position: absolute;
-  left: 50%;
-  top: 5px;
-  width: 2px;
-  height: 22px;
-  margin-left: -1px;
-  background: linear-gradient(to bottom, var(--phos-hot), color-mix(in srgb, var(--phos) 25%, transparent));
-  transform-origin: 50% 26px;
-  transition: transform 140ms cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.knob[data-motion='off'] .knob-mark {
-  transition: none;
-}
-
-/* Detent ticks and their legends, arranged around the skirt. */
-.knob-dial {
-  position: relative;
-  flex: 1 1 auto;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-}
-
-.knob-pos {
-  appearance: none;
-  background: none;
-  border: 0;
-  padding: 1px 0;
-  width: 100%;
-  text-align: left;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 7px;
-}
-
-.knob-tick {
-  width: 9px;
-  height: 1px;
-  background: var(--gratic-maj);
-  flex: none;
-}
-
-.knob-pos[data-on='true'] .knob-tick {
-  background: var(--phos-hot);
-  height: 2px;
-}
-
-.knob-legend {
-  font-family: var(--mono);
-  font-variation-settings: 'wdth' 87.5, 'wght' 400;
-  font-size: 9.5px;
-  letter-spacing: 0.02em;
-  color: var(--ink-3);
-}
-
-.knob-pos[data-on='true'] .knob-legend {
-  color: var(--phos-hot);
-  font-variation-settings: 'wdth' 87.5, 'wght' 550;
-}
-
-/* ============================================================================
-   THE SCREEN — CRT glass with an etched graticule. Every function draws its
-   display output here; controls stay out on the panel.
-   ========================================================================= */
-
-.screen {
-  position: relative;
-  background:
-    radial-gradient(125% 108% at 50% 0%, #0a1009 0%, var(--glass) 62%, #030503 100%);
-  border: 1px solid #030503;
-  box-shadow:
-    0 0 0 1px var(--hair),
-    0 0 40px 12px #000 inset,
-    0 0 0 6px var(--panel);
-  overflow: hidden;
-  min-width: 0;
-}
-
-.screen-in {
-  position: relative;
-  z-index: 2;
-  min-width: 0;
-}
-
-/* The etched graticule, behind everything on the glass. */
-.gratic {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  z-index: 0;
-  pointer-events: none;
-}
-
-/* Tube veiling glare + scanlines, in front of content but faint. */
-.screen::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  z-index: 3;
-  pointer-events: none;
-  background:
-    repeating-linear-gradient(to bottom, transparent 0 2px, rgba(0, 0, 0, 0.2) 2px 3px),
-    radial-gradient(115% 92% at 50% 42%, transparent 55%, rgba(0, 0, 0, 0.5) 100%);
-  mix-blend-mode: multiply;
-}
-
-/* Vitals: the trace canvas fills the glass. */
-.tube {
-  position: relative;
-  aspect-ratio: 10 / 6;
-  min-height: 240px;
-}
-
-.beam {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  z-index: 1;
-}
-
-/* On-glass readout corners, the way a scope prints its settings on the tube. */
-.tube-osd {
-  position: absolute;
-  z-index: 2;
-  display: flex;
-  gap: 14px;
-  font-family: var(--mono);
-  font-variation-settings: 'wdth' 87.5, 'wght' 450;
-  font-size: 10px;
-  letter-spacing: 0.02em;
-  color: var(--ink-2);
-  pointer-events: none;
-}
-
-.tube-osd[data-at='top'] {
-  top: 10px;
-  left: 12px;
-  right: 12px;
-  justify-content: space-between;
-}
-
-.tube-osd[data-at='bottom'] {
-  bottom: 10px;
-  left: 12px;
-  right: 12px;
-  justify-content: space-between;
-}
-
-.osd-ch1 {
-  color: var(--phos);
-}
-
-.osd-ch2 {
-  color: var(--ch2);
-}
-
-/* NO SIGNAL / trigger-lost overlay, centred on the tube. */
-.tube-msg {
-  position: absolute;
-  inset: 0;
-  z-index: 2;
-  display: grid;
-  place-content: center;
-  gap: 6px;
-  text-align: center;
-  padding: 20px;
-}
-
-/* ============================================================================
-   SEVEN-SEGMENT READOUTS
-   ========================================================================= */
-
-.segline {
-  display: flex;
-  align-items: flex-end;
-  gap: 1px;
-}
-
-.seg-svg {
-  display: block;
-  height: var(--seg-h, 40px);
-  width: auto;
-  flex: none;
-}
-
-.seg-on {
-  fill: var(--seg-c, var(--phos-hot));
-  filter: drop-shadow(0 0 4px color-mix(in srgb, var(--seg-c, var(--phos-hot)) 45%, transparent));
-}
-
-/* Unlit segments stay visible — the display is physical, not a font. */
-.seg-off {
-  fill: #16210f;
-}
-
-.seg-unit {
-  font-family: var(--sil);
-  font-variation-settings: 'wdth' 80, 'wght' 650;
-  font-size: 10px;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--ink-2);
-  padding-bottom: 4px;
-  margin-left: 6px;
-}
-
-/* A measurement cell: nomenclature, seven-segment value, provenance line. */
-.meas-row {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(196px, 1fr));
-  gap: 1px;
-  background: var(--hair);
-  border: 1px solid var(--hair);
-}
-
-.meas {
-  background: var(--panel);
-  padding: 12px 14px 13px;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 9px;
-}
-
-.meas-k {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-}
-
-.meas-note {
-  font-family: var(--mono);
-  font-variation-settings: 'wdth' 87.5, 'wght' 400;
-  font-size: 9.5px;
-  line-height: 1.5;
-  color: var(--ink-3);
-  letter-spacing: 0.01em;
-}
-
-/* ---- segmented bargraph meter --------------------------------------- */
-
-.meter {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-}
-
-.meter-bar {
-  display: flex;
-  gap: 2px;
-  height: 12px;
-}
-
-.meter-seg {
-  flex: 1 1 0;
-  background: #16210f;
-  box-shadow: 0 0 0 1px #0a0e09 inset;
-}
-
-.meter-seg[data-on='true'] {
-  background: var(--phos);
-  box-shadow: 0 0 6px -1px color-mix(in srgb, var(--phos-hot) 55%, transparent);
-}
-
-.meter-seg[data-on='true'][data-zone='hi'] {
-  background: var(--amber);
-  box-shadow: 0 0 6px -1px color-mix(in srgb, var(--amber) 55%, transparent);
-}
-
-.meter-seg[data-on='true'][data-zone='over'] {
-  background: var(--warn-rule);
-  box-shadow: 0 0 6px -1px color-mix(in srgb, var(--warn-rule) 60%, transparent);
-}
-
-.meter-scale {
-  display: flex;
-  justify-content: space-between;
-}
-
-/* ============================================================================
-   STATE LISTING — the records ledger, drawn on the glass like a logic
-   analyser's listing display.
-   ========================================================================= */
-
-.listing-wrap {
-  overflow-x: auto;
-  overscroll-behavior-x: contain;
-}
-
-.listing {
-  width: 100%;
-  min-width: 720px;
-  border-collapse: collapse;
-  font-family: var(--mono);
-  font-variation-settings: 'wdth' 87.5, 'wght' 400;
-  font-size: 11px;
-  letter-spacing: -0.01em;
-}
-
-.listing thead th {
-  position: sticky;
-  top: 0;
-  z-index: 1;
-  background: #0b110a;
-  border-bottom: 1px solid var(--gratic-maj);
-  padding: 0;
-  text-align: left;
-  white-space: nowrap;
-}
-
-.listing thead th.num {
-  text-align: right;
-}
-
-.th-btn {
-  appearance: none;
-  background: none;
-  border: 0;
-  width: 100%;
-  padding: 8px 12px;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-family: var(--sil);
-  font-variation-settings: 'wdth' 78, 'wght' 650;
-  font-size: 9px;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: var(--ink-2);
-  cursor: pointer;
-}
-
-.th-btn:hover {
-  color: var(--phos-key);
-}
-
-.listing thead th[aria-sort] .th-btn {
-  color: var(--phos-hot);
-}
-
-.th-static {
-  display: block;
-  padding: 8px 12px;
-  font-family: var(--sil);
-  font-variation-settings: 'wdth' 78, 'wght' 650;
-  font-size: 9px;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: var(--ink-3);
-}
-
-.listing tbody td {
-  padding: 7px 12px;
-  border-bottom: 1px solid #16200f;
-  color: var(--ink);
-  white-space: nowrap;
-  vertical-align: baseline;
-}
-
-.listing tbody tr:hover td {
-  background: rgba(57, 255, 20, 0.045);
-  color: var(--phos);
-}
-
-.listing td.num {
-  text-align: right;
-  font-variant-numeric: tabular-nums;
-}
-
-.listing td.key {
-  color: var(--phos);
-  font-variation-settings: 'wdth' 87.5, 'wght' 500;
-}
-
-.listing td.dim {
-  color: var(--ink-3);
-}
-
-/* Nothing to show is a fact, not an omission — print it. */
-.nil {
-  color: var(--ink-3);
-}
-
-/* Small enum chip: engraved, not a pill. */
-.tag {
-  display: inline-block;
-  padding: 1px 6px 2px;
-  border: 1px solid var(--gratic-maj);
-  font-family: var(--sil);
-  font-variation-settings: 'wdth' 80, 'wght' 650;
-  font-size: 9px;
-  letter-spacing: 0.13em;
-  text-transform: uppercase;
-  color: var(--ink-2);
-  white-space: nowrap;
-}
-
-.tag[data-tone='live'] {
-  border-color: color-mix(in srgb, var(--phos) 45%, transparent);
-  color: var(--phos);
-}
-
-.tag[data-tone='amber'] {
-  border-color: color-mix(in srgb, var(--amber) 45%, transparent);
-  color: var(--amber);
-}
-
-.tag[data-tone='off'] {
-  color: var(--ink-3);
-}
-
-/* ============================================================================
-   PAGING + SEARCH
-   ========================================================================= */
-
-.bar {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-
-.bar-end {
-  margin-left: auto;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-
-/* Toggle pair, mechanically interlocked like a bank of pushbuttons. */
-.gang {
-  display: flex;
-  gap: 1px;
-  background: var(--hair);
-  border: 1px solid var(--hair);
-  padding: 0;
-}
-
-.gang .btn {
-  border: 0;
-  box-shadow: none;
-  background: #151b14;
-}
-
-.gang .btn[aria-pressed='true'] {
-  background: var(--phos);
-  color: var(--dark-ink);
-}
-
-.field {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-  min-width: 0;
-}
-
-.field-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-input[type='text'],
-input[type='search'],
-input[type='email'],
-input[type='tel'],
-input[type='date'],
-select,
-textarea {
-  appearance: none;
-  background: var(--glass);
-  border: 1px solid var(--hair);
-  box-shadow: var(--sunk);
-  color: var(--phos);
-  font-family: var(--mono);
-  font-variation-settings: 'wdth' 87.5, 'wght' 400;
-  font-size: 11.5px;
-  padding: 7px 10px;
-  min-width: 0;
-  width: 100%;
-  border-radius: 0;
-}
-
-input::placeholder {
-  color: var(--ink-3);
-  font-family: var(--sil);
-  font-variation-settings: 'wdth' 84, 'wght' 400;
-  letter-spacing: 0.04em;
+  font-style: italic;
   opacity: 1;
 }
 
-input:hover,
-select:hover,
-textarea:hover {
-  border-color: var(--hair-lit);
+a {
+  color: inherit;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
 }
 
-select {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='6'%3E%3Cpath d='M0 0 L4.5 6 L9 0Z' fill='%237bae6e'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 10px center;
-  padding-right: 28px;
-  cursor: pointer;
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
 }
 
-input[data-bad='true'],
-select[data-bad='true'] {
-  border-color: var(--warn-rule);
-}
-
-.field-err {
-  font-family: var(--sil);
-  font-variation-settings: 'wdth' 84, 'wght' 500;
-  font-size: 11px;
-  color: var(--warn);
-  letter-spacing: 0.01em;
-}
-
-.grid-form {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 13px 16px;
-}
-
-/* ============================================================================
-   PLATES — engraved advisory panels. Amber is advisory, orange is fault.
-   ========================================================================= */
-
-/* An advisory area silkscreened onto the panel: a 1px engraved boundary in the
-   tone that applies, matching every other enclosure in this world. */
-.plate {
-  display: grid;
-  grid-template-columns: 15px 1fr;
-  gap: 11px;
-  padding: 11px 13px;
-  border: 1px solid var(--hair);
-  background: #0d120c;
-  font-size: 12px;
-  line-height: 1.55;
-  color: var(--ink);
-}
-
-.plate-ico {
-  color: var(--ink-3);
-  margin-top: 1px;
-}
-
-.plate[data-tone='fault'] {
-  border-color: color-mix(in srgb, var(--warn-rule) 58%, var(--hair));
-  background: #150c07;
-  color: var(--warn);
-}
-
-.plate[data-tone='fault'] .plate-ico {
-  color: var(--warn-rule);
-}
-
-.plate[data-tone='armed'] {
-  border-color: color-mix(in srgb, var(--amber) 50%, var(--hair));
-  background: #141006;
-}
-
-.plate[data-tone='armed'] .plate-ico {
-  color: var(--amber);
-}
-
-.plate b {
-  font-family: var(--sil);
-  font-variation-settings: 'wdth' 82, 'wght' 700;
-  letter-spacing: 0.02em;
-}
-
-.plate code,
-code {
-  font-family: var(--mono);
-  font-variation-settings: 'wdth' 87.5, 'wght' 450;
-  font-size: 0.9em;
-  color: var(--phos-hot);
-  background: rgba(57, 255, 20, 0.07);
-  padding: 1px 5px;
-  border: 1px solid rgba(57, 255, 20, 0.16);
-}
-
-/* ============================================================================
-   PROBE CONSOLE
-   ========================================================================= */
-
-.probe-list {
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-}
-
-.probe {
-  appearance: none;
-  text-align: left;
-  padding: 8px 11px;
-  border: 1px solid var(--hair);
-  background: #151b14;
-  box-shadow: var(--lift);
-  cursor: pointer;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  color: var(--ink);
-  transition: background 90ms linear;
-}
-
-.probe:hover {
-  background: var(--bezel-hi);
-}
-
-.probe[aria-pressed='true'] {
-  background: var(--bezel-hi);
-  border-color: var(--phos);
-  box-shadow: -3px 0 0 0 var(--phos-hot) inset;
-}
-
-.probe-path {
-  font-family: var(--mono);
-  font-variation-settings: 'wdth' 87.5, 'wght' 450;
-  font-size: 10.5px;
-  color: var(--phos);
-  overflow-wrap: anywhere;
-}
-
-.probe[aria-pressed='true'] .probe-path {
-  color: var(--phos-hot);
-}
-
-.probe-note {
-  font-variation-settings: 'wdth' 84, 'wght' 400;
-  font-size: 11px;
-  color: var(--ink-3);
-  line-height: 1.4;
-}
-
-.payload {
-  margin: 0;
-  padding: 14px 16px;
-  font-family: var(--mono);
-  font-variation-settings: 'wdth' 87.5, 'wght' 400;
-  font-size: 11px;
-  line-height: 1.7;
-  color: var(--phos);
-  white-space: pre;
-  overflow: auto;
-  max-height: 460px;
-  tab-size: 2;
-}
-
-.payload[data-empty='true'] {
-  color: var(--ink-3);
-  white-space: normal;
-}
-
-/* ============================================================================
-   BLOCK DIAGRAM — the layer stack, drawn as signal flow through stages.
-   ========================================================================= */
-
-.stack {
-  display: flex;
-  flex-direction: column;
-}
-
-.stage {
-  display: grid;
-  grid-template-columns: 34px minmax(0, 1fr);
-  gap: 14px;
-  padding: 13px 14px;
-  border: 1px solid var(--gratic-maj);
-  background: rgba(10, 16, 9, 0.72);
-}
-
-.stage + .stage {
-  border-top: 0;
-}
-
-.stage-n {
-  font-family: var(--mono);
-  font-variation-settings: 'wdth' 87.5, 'wght' 600;
-  font-size: 15px;
-  color: var(--phos);
-  text-align: right;
+code,
+kbd,
+samp,
+pre {
+  font-family: var(--f-mono);
+  font-size: 1em;
   font-variant-numeric: tabular-nums;
 }
 
-.stage-name {
-  font-variation-settings: 'wdth' 82, 'wght' 700;
-  font-size: 12px;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: var(--phos-key);
-}
-
-.stage-glob {
-  font-family: var(--mono);
-  font-variation-settings: 'wdth' 87.5, 'wght' 400;
-  font-size: 10px;
-  color: var(--ink-3);
-  margin-top: 2px;
-  overflow-wrap: anywhere;
-}
-
-.stage-duty {
-  font-size: 12px;
-  line-height: 1.55;
-  color: var(--ink);
-  margin-top: 6px;
-}
-
-/* Signal-flow arrow between stages. */
-.flow {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  padding: 5px 0 5px 48px;
-  color: var(--ink-3);
-}
-
-.flow-line {
-  width: 1px;
-  height: 14px;
-  background: var(--gratic-maj);
-  margin-left: -34px;
-}
-
-.rules {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 1px;
-  background: var(--hair);
-  border: 1px solid var(--hair);
-}
-
-.rule {
-  background: var(--panel);
-  padding: 13px 14px;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.rule-n {
-  font-family: var(--mono);
-  font-variation-settings: 'wdth' 87.5, 'wght' 550;
-  font-size: 10px;
-  color: var(--amber);
-  letter-spacing: 0.04em;
-}
-
-/* ============================================================================
-   APRON — chassis footer
-   ========================================================================= */
-
-.apron {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px 24px;
-  flex-wrap: wrap;
-  padding: 13px 30px 14px;
-  border-top: 1px solid #050705;
-  background: linear-gradient(to bottom, #151b14, var(--bezel));
-  box-shadow: 0 1px 0 0 var(--hair-lit) inset;
-}
-
-.apron-links {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  flex-wrap: wrap;
-}
-
-.apron-links a {
-  font-family: var(--mono);
-  font-variation-settings: 'wdth' 87.5, 'wght' 450;
-  font-size: 10px;
-  letter-spacing: 0.02em;
-  text-decoration: none;
-  border-bottom: 1px solid color-mix(in srgb, var(--phos-key) 32%, transparent);
-  padding-bottom: 1px;
-}
-
-.apron-links a:hover {
-  border-bottom-color: var(--phos-hot);
-}
-
-/* ============================================================================
-   HEADS + UTILITIES
-   ========================================================================= */
-
-.head {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 12px 20px;
-  flex-wrap: wrap;
-  padding-bottom: 10px;
-  border-bottom: 1px solid var(--hair);
-}
-
-.head-t {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-}
-
-.head h2 {
-  font-variation-settings: 'wdth' 84, 'wght' 700;
-  font-size: 15px;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: var(--phos-key);
-  line-height: 1.2;
-}
-
-.head-src {
-  font-family: var(--mono);
-  font-variation-settings: 'wdth' 87.5, 'wght' 400;
-  font-size: 10px;
-  color: var(--ink-3);
-  letter-spacing: 0.01em;
-}
-
-.two {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  gap: 20px;
-  align-items: start;
-}
-
-.two-31 {
-  display: grid;
-  grid-template-columns: minmax(0, 250px) minmax(0, 1fr);
-  gap: 20px;
-  align-items: start;
-}
-
-.col {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-  min-width: 0;
-}
-
-.kv {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  gap: 5px 14px;
-  align-items: baseline;
-}
-
-.kv dt {
-  margin: 0;
-}
-
-.kv dd {
-  margin: 0;
-  text-align: right;
+/* Anything measured. Tabular, so columns and carets line up by construction. */
+.mono,
+.span-val,
+.caret,
+.gut,
+.prov,
+.code,
+.tag,
+.win-lab,
+.pre,
+.in,
+.check-code {
+  font-family: var(--f-mono);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'kern' 1;
 }
 
 .sr {
   position: absolute;
   width: 1px;
   height: 1px;
-  padding: 0;
   margin: -1px;
+  padding: 0;
   overflow: hidden;
   clip-path: inset(50%);
   white-space: nowrap;
   border: 0;
 }
 
-/* Screen redraw when the function changes — an unblank sweep, not a fade-up. */
-.raster {
-  animation: raster 260ms cubic-bezier(0.22, 0.9, 0.24, 1) both;
+/* --- severity ------------------------------------------------------------- */
+
+/* One mapping, used by every element that carries a severity. */
+[data-sev='note'] {
+  --sev: var(--ink);
+  --sev-field: var(--on-field);
+}
+[data-sev='warn'] {
+  --sev: var(--warn);
+  --sev-field: var(--warn-field);
+}
+[data-sev='error'] {
+  --sev: var(--error);
+  --sev-field: var(--error-field);
+}
+[data-sev='help'] {
+  --sev: var(--help);
+  --sev-field: var(--help-field);
 }
 
-@keyframes raster {
+/* ==========================================================================
+   Shell — the petrol field, and the sheet it sits beside
+   ========================================================================== */
+
+.report {
+  display: grid;
+  grid-template-columns: var(--field-w) minmax(0, 1fr);
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+/* --- the check field ------------------------------------------------------ */
+
+.field {
+  background: var(--ink);
+  color: var(--on-field);
+  padding: calc(var(--pad) * 0.8) 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1.75rem;
+  position: sticky;
+  top: 0;
+  align-self: start;
+  max-height: 100vh;
+  max-height: 100dvh;
+  overflow-y: auto;
+}
+
+.field-pad {
+  padding-inline: 1.25rem;
+}
+
+/* `checking healthcare-erp-backend v1.0.2 (development)` — the run header,
+   the way a compiler names what it is about to check. */
+.field-head {
+  padding-inline: 1.25rem;
+}
+
+.field-head b {
+  font-family: var(--f-mono);
+  font-weight: 700;
+  display: block;
+  letter-spacing: -0.01em;
+  overflow-wrap: anywhere;
+}
+
+.field-head span {
+  color: var(--on-field-2);
+  font-family: var(--f-mono);
+  font-weight: 300;
+  display: block;
+}
+
+.field-label {
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  font-weight: 700;
+  color: var(--on-field-3);
+  padding-inline: 1.25rem;
+  display: block;
+}
+
+.field-rule {
+  height: 1px;
+  background: var(--field-rule);
+  border: 0;
+}
+
+/* --- the check list (tablist) --------------------------------------------- */
+
+.checks {
+  display: flex;
+  flex-direction: column;
+}
+
+.check {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: 0.5rem 1rem;
+  width: 100%;
+  padding: 0.6rem 1.25rem;
+  background: none;
+  border: 0;
+  text-align: left;
+  cursor: pointer;
+  color: var(--on-field-2);
+  transition:
+    background var(--sweep),
+    color var(--sweep);
+}
+
+.check:hover {
+  background: color-mix(in oklab, var(--sheet) 9%, var(--ink));
+  color: var(--on-field);
+}
+
+/* Selection reads by reversal, not by a border or a tint. */
+.check[aria-selected='true'] {
+  background: var(--sheet);
+  color: var(--ink);
+}
+
+.check-code {
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.check-name {
+  display: block;
+  font-family: var(--f-sans);
+  font-weight: 400;
+  color: inherit;
+  opacity: 0.72;
+}
+
+.check[aria-selected='true'] .check-name {
+  opacity: 0.68;
+}
+
+/* The live severity keyword. Always the word, never only the colour. */
+.check-sev {
+  font-family: var(--f-mono);
+  font-weight: 700;
+  font-size: var(--t-body);
+  color: var(--sev-field, var(--on-field-2));
+  justify-self: end;
+}
+
+.check[aria-selected='true'] .check-sev {
+  color: var(--sev, var(--ink));
+}
+
+/* --- field controls ------------------------------------------------------- */
+
+.rate {
+  display: flex;
+  flex-wrap: wrap;
+  padding-inline: 1.25rem;
+  gap: 0;
+}
+
+.rate-opt {
+  font-family: var(--f-mono);
+  font-variant-numeric: tabular-nums;
+  padding: 0.2rem 0.5rem;
+  background: none;
+  border: 0;
+  border-bottom: 1px solid var(--field-rule);
+  color: var(--on-field-2);
+  cursor: pointer;
+  transition:
+    background var(--sweep),
+    color var(--sweep),
+    border-color var(--sweep);
+}
+
+.rate-opt:hover {
+  color: var(--on-field);
+  border-bottom-color: var(--on-field);
+}
+
+.rate-opt[aria-pressed='true'] {
+  background: var(--sheet);
+  color: var(--ink);
+  border-bottom-color: var(--sheet);
+  font-weight: 700;
+}
+
+.field-note {
+  padding-inline: 1.25rem;
+  color: var(--on-field-2);
+  font-weight: 300;
+  max-width: 34ch;
+}
+
+.field-note .code {
+  color: var(--on-field);
+}
+
+.field-foot {
+  margin-top: auto;
+  padding-inline: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  color: var(--on-field-2);
+}
+
+.field-foot a {
+  color: var(--on-field);
+  font-family: var(--f-mono);
+  text-decoration-color: var(--on-field-3);
+  width: fit-content;
+}
+
+.field-foot a:hover {
+  text-decoration-color: var(--on-field);
+}
+
+/* --- the sheet ------------------------------------------------------------ */
+
+.sheet {
+  background: var(--sheet);
+  padding: calc(var(--pad) * 0.9) var(--pad) calc(var(--pad) * 1.6);
+  min-width: 0;
+}
+
+/* ==========================================================================
+   The diagnostic — gutter, spans, carets, notes
+   ========================================================================== */
+
+.diag {
+  display: grid;
+  grid-template-columns: var(--gut-w) minmax(0, 1fr);
+  align-content: start;
+}
+
+/* The gutter rule is a border on contiguous cells, so it runs unbroken down
+   the whole block exactly as `|` does in a real diagnostic. No row gaps. */
+.diag > .gut {
+  border-right: 1px solid var(--rule-hard);
+  text-align: right;
+  padding: 0.16rem 0.85rem 0.16rem 0;
+  color: var(--ink-3);
+  font-weight: 400;
+  font-size: var(--t-body);
+}
+
+.diag > .cell {
+  padding: 0.16rem 0 0.16rem 0.85rem;
+  min-width: 0;
+}
+
+/* The severity line and its provenance sit outside the gutter, full width. */
+.diag > .cell-full {
+  grid-column: 1 / -1;
+  padding-left: 0;
+}
+
+.gap {
+  height: 0.7rem;
+}
+
+.gap-lg {
+  height: 1.6rem;
+}
+
+/* --- the severity keyword line ------------------------------------------- */
+
+.sev {
+  font-size: var(--t-key);
+  line-height: 1.06;
+  letter-spacing: -0.03em;
+  text-wrap: balance;
+  max-width: 30ch;
+  margin-bottom: 0.7rem;
+}
+
+.sev-key {
+  font-family: var(--f-mono);
+  font-weight: 700;
+  color: var(--sev, var(--ink));
+}
+
+.sev-msg {
+  font-weight: 300;
+  color: var(--ink);
+}
+
+/* `--> GET /api/v1/telemetry · 0.79 ms probe` */
+.prov {
+  color: var(--ink-2);
+  padding-left: 1.1rem;
+  overflow-wrap: anywhere;
+}
+
+.prov-arr {
+  color: var(--ink-3);
+  margin-right: 0.4rem;
+}
+
+.prov b {
+  font-weight: 700;
+  color: var(--ink);
+}
+
+/* --- a measured span, and the caret struck under it ---------------------- */
+
+/* Both rows of a span share these columns, which is what makes the caret run
+   land exactly beneath the value: same column, same face, same tabular width. */
+.span {
+  display: grid;
+  grid-template-columns: minmax(0, var(--label-w)) minmax(0, 1fr);
+  column-gap: 1.25rem;
+  align-items: baseline;
+}
+
+.span-label {
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-weight: 700;
+  color: var(--ink-3);
+  font-size: var(--t-body);
+}
+
+.span-val {
+  font-weight: 700;
+  color: var(--ink);
+  letter-spacing: -0.01em;
+}
+
+.span-val[data-sev='error'],
+.span-val[data-sev='warn'] {
+  color: var(--sev);
+}
+
+/* An unmeasurable value is an em dash. Never a zero. */
+.dash {
+  color: var(--ink-3);
+  font-weight: 400;
+}
+
+.span-ann {
+  grid-column: 2;
+  min-width: 0;
+}
+
+/* The caret run. Its length is the value's character count, so it measures
+   exactly the span it annotates. */
+.caret {
+  color: var(--sev, var(--ink));
+  font-weight: 700;
+  letter-spacing: 0;
+  white-space: pre;
+}
+
+.caret-note {
+  color: var(--ink-2);
+  font-weight: 300;
+  max-width: 68ch;
+}
+
+.caret-note b {
+  font-weight: 700;
+  color: var(--ink);
+}
+
+/* The signature motion: the underline is redrawn beneath a freshly-read value,
+   left to right. Live-ness is the annotation being struck again — never a
+   pulse, a glow, or a breathing badge. */
+@media (prefers-reduced-motion: no-preference) {
+  .caret[data-strike] {
+    animation: strike var(--sweep) both;
+  }
+
+  .span-val[data-strike] {
+    animation: swap 120ms ease-out both;
+  }
+}
+
+@keyframes strike {
   from {
-    opacity: 0;
-    clip-path: inset(0 0 100% 0);
+    clip-path: inset(0 100% 0 0);
   }
   to {
-    opacity: 1;
     clip-path: inset(0 0 0 0);
   }
 }
 
-.spin {
-  animation: spin 900ms linear infinite;
-}
-
-@keyframes spin {
+@keyframes swap {
+  from {
+    opacity: 0.45;
+  }
   to {
-    transform: rotate(360deg);
+    opacity: 1;
   }
 }
 
-/* ============================================================================
-   RESPONSIVE
-   ========================================================================= */
+/* --- `= note:` and `= help:` rows ---------------------------------------- */
 
-@media (max-width: 1080px) {
-  .deck {
+.note {
+  color: var(--ink-2);
+  font-weight: 300;
+  max-width: 74ch;
+  padding-left: 1.1rem;
+  text-indent: -1.1rem;
+}
+
+.note-key {
+  font-family: var(--f-mono);
+  font-weight: 700;
+  color: var(--sev, var(--ink));
+}
+
+.note b {
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.note .code {
+  color: var(--ink);
+}
+
+/* A command the reader can run. Cobalt, and always a `= help:` row. */
+.help-cmd {
+  color: var(--help);
+  font-weight: 700;
+}
+
+.code {
+  color: var(--ink-2);
+  background: var(--wash-2);
+  padding: 0.05em 0.32em;
+  overflow-wrap: anywhere;
+}
+
+/* ==========================================================================
+   The sample window — sixty hairline columns, direct-labelled
+   ========================================================================== */
+
+.win {
+  display: block;
+  width: 100%;
+  height: 2.6rem;
+  overflow: visible;
+}
+
+.win-col {
+  stroke: var(--ink-3);
+  stroke-width: 1;
+}
+
+/* The newest sample is the one the reader is looking for: it is named by the
+   `now` label beside it, and drawn at full ink so it is findable. */
+.win-col[data-now='true'] {
+  stroke: var(--sev, var(--ink));
+  stroke-width: 1;
+}
+
+.win-lab {
+  color: var(--ink-3);
+  font-weight: 400;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 1.4rem;
+}
+
+.win-lab b {
+  color: var(--ink);
+  font-weight: 700;
+}
+
+.win-empty {
+  color: var(--ink-3);
+  font-weight: 300;
+  font-style: italic;
+}
+
+/* ==========================================================================
+   Controls — one button, ranked by reversal
+   ========================================================================== */
+
+.btn {
+  font-family: var(--f-mono);
+  font-size: var(--t-body);
+  font-weight: 700;
+  padding: 0.24rem 0.6rem;
+  background: none;
+  border: 0;
+  border-bottom: 1px solid var(--rule-hard);
+  color: var(--ink);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  transition:
+    background var(--sweep),
+    color var(--sweep),
+    border-color var(--sweep);
+}
+
+.btn:hover:not(:disabled) {
+  background: var(--ink);
+  color: var(--sheet);
+  border-bottom-color: var(--ink);
+}
+
+.btn[aria-pressed='true'] {
+  background: var(--ink);
+  color: var(--sheet);
+  border-bottom-color: var(--ink);
+}
+
+.btn:disabled {
+  color: var(--ink-3);
+  border-bottom-color: var(--rule);
+  cursor: not-allowed;
+}
+
+.btn-hi {
+  border-bottom-width: 2px;
+  border-bottom-color: var(--ink);
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1.25rem;
+}
+
+.row-end {
+  margin-left: auto;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1rem;
+}
+
+/* ==========================================================================
+   Records — a diagnostic listing
+   ========================================================================== */
+
+.tbl-wrap {
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+}
+
+.tbl {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--t-body);
+}
+
+.tbl th {
+  text-align: left;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-weight: 700;
+  color: var(--ink-3);
+  border-bottom: 1px solid var(--rule-hard);
+  padding: 0.3rem 1.1rem 0.3rem 0;
+  white-space: nowrap;
+  vertical-align: bottom;
+}
+
+.tbl td {
+  border-bottom: 1px solid var(--rule);
+  padding: 0.34rem 1.1rem 0.34rem 0;
+  vertical-align: baseline;
+}
+
+.tbl tbody tr:hover td {
+  background: var(--wash);
+}
+
+.tbl .num {
+  text-align: right;
+}
+
+/* Measured or identifying values are monospaced; names are language. */
+.tbl .key {
+  font-family: var(--f-mono);
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.tbl .mono-cell {
+  font-family: var(--f-mono);
+  font-variant-numeric: tabular-nums;
+  font-weight: 400;
+  color: var(--ink-2);
+}
+
+.tbl .dim {
+  color: var(--ink-3);
+  font-weight: 300;
+}
+
+.nil {
+  color: var(--ink-3);
+  font-weight: 300;
+  font-style: italic;
+}
+
+.th-btn {
+  font: inherit;
+  text-transform: inherit;
+  letter-spacing: inherit;
+  color: inherit;
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.th-btn:hover {
+  color: var(--ink);
+}
+
+th[aria-sort] .th-btn {
+  color: var(--ink);
+}
+
+.tag {
+  font-weight: 400;
+  color: var(--ink-2);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.tag[data-sev='warn'] {
+  color: var(--warn);
+  font-weight: 700;
+}
+
+/* Dropped where the listing would otherwise crush. */
+@media (max-width: 900px) {
+  [data-opt='true'] {
+    display: none;
+  }
+}
+
+/* ==========================================================================
+   Form — editable spans, not boxes
+   ========================================================================== */
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+  gap: 1.1rem 1.5rem;
+}
+
+.f {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.f-label {
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-weight: 700;
+  color: var(--ink-3);
+}
+
+.in {
+  width: 100%;
+  padding: 0.28rem 0;
+  background: none;
+  border: 0;
+  border-bottom: 1px solid var(--rule-hard);
+  color: var(--ink);
+  font-weight: 400;
+  transition: border-color var(--sweep);
+}
+
+.in:hover {
+  border-bottom-color: var(--ink-3);
+}
+
+.in:focus {
+  border-bottom-color: var(--ink);
+  outline: none;
+}
+
+.in:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 3px;
+}
+
+select.in {
+  cursor: pointer;
+}
+
+.in[data-bad='true'] {
+  border-bottom-color: var(--error);
+  border-bottom-width: 2px;
+}
+
+/* A rejected field is annotated the way any other span is: a caret run struck
+   beneath it, carrying what the server said. */
+.f-err {
+  color: var(--error);
+  font-weight: 300;
+}
+
+.f-err .caret {
+  color: var(--error);
+  margin-right: 0.4rem;
+}
+
+/* ==========================================================================
+   Response body
+   ========================================================================== */
+
+.pre {
+  margin: 0;
+  padding: 0.85rem 1rem;
+  background: var(--wash);
+  border-top: 1px solid var(--rule-hard);
+  color: var(--ink);
+  font-weight: 400;
+  line-height: 1.5;
+  max-height: 27rem;
+  overflow: auto;
+  white-space: pre;
+  tab-size: 2;
+}
+
+.pre[data-empty='true'] {
+  color: var(--ink-3);
+  font-style: italic;
+  white-space: normal;
+}
+
+/* ==========================================================================
+   Probe list
+   ========================================================================== */
+
+.probes {
+  display: flex;
+  flex-direction: column;
+}
+
+.probe {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 0.4rem 0.6rem 0.4rem 0;
+  background: none;
+  border: 0;
+  border-bottom: 1px solid var(--rule);
+  cursor: pointer;
+  color: var(--ink-2);
+  transition:
+    background var(--sweep),
+    color var(--sweep);
+}
+
+.probe:hover {
+  background: var(--wash);
+  color: var(--ink);
+}
+
+.probe[aria-pressed='true'] {
+  background: var(--ink);
+  color: var(--sheet);
+  padding-left: 0.6rem;
+  border-bottom-color: var(--ink);
+}
+
+.probe-path {
+  display: block;
+  font-family: var(--f-mono);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  overflow-wrap: anywhere;
+}
+
+.probe-note {
+  display: block;
+  font-weight: 300;
+  color: var(--ink-3);
+}
+
+.probe[aria-pressed='true'] .probe-note,
+.probe:hover .probe-note {
+  color: inherit;
+  opacity: 0.78;
+}
+
+/* ==========================================================================
+   Two-column split, where a panel earns one
+   ========================================================================== */
+
+.split {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 0 var(--pad);
+  align-items: start;
+}
+
+.split-31 {
+  display: grid;
+  grid-template-columns: minmax(0, 19rem) minmax(0, 1fr);
+  gap: 0 var(--pad);
+  align-items: start;
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  min-width: 0;
+}
+
+/* ==========================================================================
+   Responsive — the field folds to a strip, the spans stack
+   ========================================================================== */
+
+@media (max-width: 1180px) {
+  :root {
+    --field-w: 14.5rem;
+    --label-w: 9.5rem;
+  }
+}
+
+@media (max-width: 1020px) {
+  .split,
+  .split-31 {
     grid-template-columns: minmax(0, 1fr);
-  }
-
-  .rail {
-    border-right: 0;
-    border-bottom: 1px solid var(--hair);
-    background: linear-gradient(to bottom, #121711, var(--panel));
-    flex-direction: row;
-    align-items: flex-start;
-    gap: 16px;
-    overflow-x: auto;
-  }
-
-  .rail > * {
-    flex: 1 1 260px;
-    min-width: 240px;
-  }
-
-  .fns {
-    flex-direction: row;
-    flex-wrap: wrap;
-  }
-
-  .fns .fn {
-    flex: 1 1 180px;
-  }
-
-  .two,
-  .two-31 {
-    grid-template-columns: minmax(0, 1fr);
+    gap: 1.6rem;
   }
 }
 
 @media (max-width: 860px) {
-  /* Drop the optional columns rather than force a wide horizontal scroll. */
-  .listing [data-opt='true'] {
-    display: none;
+  :root {
+    --gut-w: 2.4rem;
   }
 
-  .listing {
-    min-width: 460px;
-  }
-}
-
-@media (max-width: 760px) {
-  .bench {
-    padding: 12px 10px 26px;
-  }
-
-  .bezel-top {
-    grid-template-columns: minmax(0, 1fr);
-    padding: 15px 16px;
-  }
-
-  .strip {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .rail {
-    flex-direction: column;
-    padding: 14px 14px 16px;
-  }
-
-  .rail > * {
-    flex: none;
-    min-width: 0;
-    width: 100%;
-  }
-
-  .work {
-    padding: 15px 14px 20px;
-  }
-
-  .apron {
-    padding: 12px 16px 13px;
-  }
-
-  .inst {
-    background-position: 7px 7px, right 7px top 7px, 7px calc(100% - 7px), right 7px bottom 7px;
-  }
-
-  .tube {
-    aspect-ratio: 4 / 3;
-    min-height: 200px;
-  }
-
-  .dm {
-    font-size: 17px;
-  }
-
-  .meas-row {
+  .report {
     grid-template-columns: minmax(0, 1fr);
   }
 
-  .knob {
-    width: 54px;
-    height: 54px;
+  /* The field keeps its job and its keyboard behaviour; it stops being a
+     column and becomes the head of the report. */
+  .field {
+    position: static;
+    max-height: none;
+    padding-bottom: 1.25rem;
+    gap: 1.25rem;
   }
 
-  .seg-svg {
-    height: 32px;
+  .checks {
+    flex-direction: row;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x proximity;
+  }
+
+  .check {
+    flex: 0 0 auto;
+    grid-template-columns: auto;
+    align-content: start;
+    gap: 0.1rem;
+    padding: 0.5rem 1rem;
+    scroll-snap-align: start;
+  }
+
+  .check-sev {
+    justify-self: start;
+  }
+
+  .field-foot {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 0.35rem 1.25rem;
+    margin-top: 0;
   }
 }
 
-/* ============================================================================
-   REDUCED MOTION — the bench still reads; nothing sweeps, pulses, or spins.
-   ========================================================================= */
+@media (max-width: 620px) {
+  :root {
+    --t-key: clamp(1.6rem, 8vw, 2rem);
+  }
+
+  /* Label above value; the caret then runs from the value's own left edge, so
+     the annotation still measures the span it belongs to. */
+  .span {
+    grid-template-columns: minmax(0, 1fr);
+    column-gap: 0;
+  }
+
+  .span-ann {
+    grid-column: 1;
+  }
+
+  .span-label {
+    letter-spacing: 0.1em;
+  }
+}
+
+/* ==========================================================================
+   Reduced motion, forced colours
+   ========================================================================== */
 
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
   *::after {
-    animation-duration: 0.001ms !important;
+    animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
-    transition-duration: 0.001ms !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+@media (forced-colors: active) {
+  .check[aria-selected='true'],
+  .btn[aria-pressed='true'],
+  .probe[aria-pressed='true'],
+  .rate-opt[aria-pressed='true'] {
+    forced-color-adjust: none;
+    background: Highlight;
+    color: HighlightText;
   }
 
-  .lamp[data-live='true'],
-  .lamp[data-tone='warn'][data-on='true'] {
-    animation: none;
-    opacity: 1;
+  .diag > .gut {
+    border-right-color: CanvasText;
   }
 }

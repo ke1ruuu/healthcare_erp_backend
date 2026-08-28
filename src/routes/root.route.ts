@@ -6,7 +6,7 @@ export const rootRoute = new Hono()
 rootRoute.get('/', (c) => {
   return c.json({
     name: 'Healthcare ERP Backend API',
-    version: '1.0.2',
+    version: '1.0.4',
     environment: env.NODE_ENV,
     status: 'operational',
     uptime: process.uptime(),
