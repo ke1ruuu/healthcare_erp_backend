@@ -1,4 +1,4 @@
-name: Backend CI
+name: Healthcare ERP Backend CI
 
 on:
   pull_request:
@@ -17,6 +17,15 @@ permissions:
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
+
+env:
+  NODE_ENV: test
+  PORT: 3000
+  DATABASE_URL: postgresql://postgres:postgres@localhost:5432/healthcare_erp_test?schema=public
+  JWT_SECRET: default-insecure-secret-key-change-me-32-chars
+  JWT_EXPIRES_IN: 7d
+  CORS_ORIGIN: '*'
+  LOG_LEVEL: info
 
 jobs:
   architecture-boundaries:
@@ -80,6 +89,21 @@ jobs:
     name: Tests
     runs-on: ubuntu-latest
 
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: healthcare_erp_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -91,6 +115,9 @@ jobs:
 
       - name: Install dependencies
         run: bun install --frozen-lockfile
+
+      - name: Deploy database migrations
+        run: bun run db:migrate:deploy
 
       - name: Run tests
         run: bun test
@@ -108,8 +135,11 @@ jobs:
         with:
           bun-version: latest
 
-      - name: Install dependencies
+      - name: Install root dependencies
         run: bun install --frozen-lockfile
 
-      - name: Build
+      - name: Install dashboard dependencies
+        run: cd dashboard && bun install --frozen-lockfile
+
+      - name: Build backend and dashboard
         run: bun run build
