@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { Role, UserStatus } from '@prisma/client'
+import { Role, UserStatus, OrganizationStatus, BranchStatus } from '@prisma/client'
 import { baseQuerySchema } from '@/shared/types/pagination.type'
 
 export const roleEnumSchema = z.nativeEnum(Role)
@@ -23,6 +23,8 @@ export const createUserSchema = z.object({
   lastName: z.string().min(1, 'Last name is required'),
   role: roleEnumSchema.default(Role.RECEPTIONIST),
   status: userStatusEnumSchema.default(UserStatus.ACTIVE),
+  organizationId: z.string().uuid('Invalid organization ID').optional(),
+  branchId: z.string().uuid('Invalid branch ID').optional(),
   phoneNumber: z.string().optional(),
   avatarUrl: z.string().url('Invalid avatar URL').optional(),
 })
@@ -37,6 +39,8 @@ export const updateUserSchema = createUserSchema
 export const userQuerySchema = baseQuerySchema.extend({
   role: roleEnumSchema.optional(),
   status: userStatusEnumSchema.optional(),
+  organizationId: z.string().uuid().optional(),
+  branchId: z.string().uuid().optional(),
 })
 
 export type CreateUserDto = z.input<typeof createUserSchema>
@@ -45,6 +49,8 @@ export type UserQueryDto = z.infer<typeof userQuerySchema>
 
 export interface UserResponseDto {
   id: string
+  organizationId?: string | null
+  branchId?: string | null
   email: string
   firstName: string
   lastName: string
@@ -54,4 +60,17 @@ export interface UserResponseDto {
   avatarUrl: string | null
   createdAt: Date
   updatedAt: Date
+  organization?: {
+    id: string
+    name: string
+    code: string
+    status: OrganizationStatus
+  } | null
+  branch?: {
+    id: string
+    organizationId: string
+    name: string
+    code: string
+    status: BranchStatus
+  } | null
 }

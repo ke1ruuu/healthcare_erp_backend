@@ -20,6 +20,7 @@ export const openApiSpec = {
   ],
   tags: [
     { name: 'System & Health', description: 'System health checks, diagnostics, metadata & live telemetry' },
+    { name: 'Auth Domain', description: 'Authentication provider, session lifecycle, token refresh & RBAC (/api/v1/auth)' },
     { name: 'Users Domain', description: 'Staff accounts, credentials, and role management (/api/v1/users)' },
     { name: 'Patients Domain', description: 'Master Patient Index (MPI), demographics, and records (/api/v1/patients)' },
   ],
@@ -207,6 +208,64 @@ export const openApiSpec = {
           emergencyContactPhone: { type: 'string' },
         },
       },
+      LoginRequest: {
+        type: 'object',
+        required: ['email', 'password'],
+        properties: {
+          email: { type: 'string', format: 'email', example: 'doctor@hospital.org' },
+          password: { type: 'string', format: 'password', example: 'Password@123' },
+        },
+      },
+      RefreshTokenRequest: {
+        type: 'object',
+        required: ['refreshToken'],
+        properties: {
+          refreshToken: { type: 'string', example: 'rt_a1b2c3d4e5f67890...' },
+        },
+      },
+      ChangePasswordRequest: {
+        type: 'object',
+        required: ['currentPassword', 'newPassword'],
+        properties: {
+          currentPassword: { type: 'string', format: 'password', example: 'Password@123' },
+          newPassword: { type: 'string', format: 'password', minLength: 8, example: 'NewSecret@2026' },
+        },
+      },
+      SessionUser: {
+        type: 'object',
+        properties: {
+          id: { type: 'string', format: 'uuid' },
+          email: { type: 'string', format: 'email' },
+          firstName: { type: 'string' },
+          lastName: { type: 'string' },
+          role: { $ref: '#/components/schemas/Role' },
+          status: { $ref: '#/components/schemas/UserStatus' },
+        },
+      },
+      AuthTokens: {
+        type: 'object',
+        properties: {
+          accessToken: { type: 'string' },
+          refreshToken: { type: 'string' },
+          tokenType: { type: 'string', example: 'Bearer' },
+          expiresIn: { type: 'integer', example: 900 },
+        },
+      },
+      AuthResponse: {
+        type: 'object',
+        properties: {
+          success: { type: 'boolean', example: true },
+          message: { type: 'string', example: 'User logged in successfully' },
+          data: {
+            type: 'object',
+            properties: {
+              user: { $ref: '#/components/schemas/SessionUser' },
+              tokens: { $ref: '#/components/schemas/AuthTokens' },
+            },
+          },
+          timestamp: { type: 'string', format: 'date-time' },
+        },
+      },
     },
   },
   paths: {
@@ -270,6 +329,215 @@ export const openApiSpec = {
           },
           503: {
             description: 'System degraded / Database unreachable',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/ErrorResponse' },
+              },
+            },
+          },
+        },
+      },
+    },
+    '/api/v1/auth/login': {
+      post: {
+        tags: ['Auth Domain'],
+        summary: 'Authenticate staff user and issue JWT session tokens',
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/LoginRequest' },
+            },
+          },
+        },
+        responses: {
+          200: {
+            description: 'Authentication successful',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/AuthResponse' },
+              },
+            },
+          },
+          400: {
+            description: 'Validation error',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/ErrorResponse' },
+              },
+            },
+          },
+          401: {
+            description: 'Invalid credentials',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/ErrorResponse' },
+              },
+            },
+          },
+          403: {
+            description: 'Account suspended or inactive',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/ErrorResponse' },
+              },
+            },
+          },
+        },
+      },
+    },
+    '/api/v1/auth/refresh': {
+      post: {
+        tags: ['Auth Domain'],
+        summary: 'Rotate refresh token and issue new session token pair',
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/RefreshTokenRequest' },
+            },
+          },
+        },
+        responses: {
+          200: {
+            description: 'Session refreshed successfully',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/AuthResponse' },
+              },
+            },
+          },
+          401: {
+            description: 'Invalid or revoked refresh token',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/ErrorResponse' },
+              },
+            },
+          },
+        },
+      },
+    },
+    '/api/v1/auth/logout': {
+      post: {
+        tags: ['Auth Domain'],
+        summary: 'Revoke active refresh session and log out user',
+        requestBody: {
+          required: false,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  refreshToken: { type: 'string' },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          200: {
+            description: 'User logged out successfully',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    success: { type: 'boolean', example: true },
+                    message: { type: 'string', example: 'Logged out successfully' },
+                    data: {
+                      type: 'object',
+                      properties: {
+                        loggedOut: { type: 'boolean', example: true },
+                      },
+                    },
+                    timestamp: { type: 'string', format: 'date-time' },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+    '/api/v1/auth/me': {
+      get: {
+        tags: ['Auth Domain'],
+        summary: 'Get currently authenticated staff profile and permissions',
+        security: [{ BearerAuth: [] }],
+        responses: {
+          200: {
+            description: 'Authenticated staff profile',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    success: { type: 'boolean', example: true },
+                    message: { type: 'string', example: 'Authenticated profile retrieved successfully' },
+                    data: { $ref: '#/components/schemas/SessionUser' },
+                    timestamp: { type: 'string', format: 'date-time' },
+                  },
+                },
+              },
+            },
+          },
+          401: {
+            description: 'Missing, invalid, or expired Bearer token',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/ErrorResponse' },
+              },
+            },
+          },
+          403: {
+            description: 'Account is not active',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/ErrorResponse' },
+              },
+            },
+          },
+        },
+      },
+    },
+    '/api/v1/auth/change-password': {
+      post: {
+        tags: ['Auth Domain'],
+        summary: 'Change user password and revoke all active sessions',
+        security: [{ BearerAuth: [] }],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/ChangePasswordRequest' },
+            },
+          },
+        },
+        responses: {
+          200: {
+            description: 'Password changed successfully',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    success: { type: 'boolean', example: true },
+                    message: { type: 'string', example: 'Password changed successfully. All active sessions have been revoked.' },
+                    data: {
+                      type: 'object',
+                      properties: {
+                        updated: { type: 'boolean', example: true },
+                      },
+                    },
+                    timestamp: { type: 'string', format: 'date-time' },
+                  },
+                },
+              },
+            },
+          },
+          401: {
+            description: 'Incorrect current password or invalid token',
             content: {
               'application/json': {
                 schema: { $ref: '#/components/schemas/ErrorResponse' },

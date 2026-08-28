@@ -89,6 +89,12 @@ export class UserService {
       status: data.status ?? UserStatus.ACTIVE,
       phoneNumber: data.phoneNumber || null,
       avatarUrl: data.avatarUrl || null,
+      ...(data.organizationId && {
+        organization: { connect: { id: data.organizationId } },
+      }),
+      ...(data.branchId && {
+        branch: { connect: { id: data.branchId } },
+      }),
     }
 
     const user = await this.userRepo.create(createInput)
@@ -134,6 +140,12 @@ export class UserService {
       ...(data.status && { status: data.status }),
       ...(data.phoneNumber !== undefined && { phoneNumber: data.phoneNumber }),
       ...(data.avatarUrl !== undefined && { avatarUrl: data.avatarUrl }),
+      ...(data.organizationId !== undefined && {
+        organization: data.organizationId ? { connect: { id: data.organizationId } } : { disconnect: true },
+      }),
+      ...(data.branchId !== undefined && {
+        branch: data.branchId ? { connect: { id: data.branchId } } : { disconnect: true },
+      }),
     }
 
     if (data.password) {

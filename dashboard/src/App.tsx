@@ -1,14 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { KeyboardEvent } from 'react'
-import { Activity, Boxes, Terminal, ShieldHalf, Zap } from 'lucide-react'
-import type { LucideIcon } from 'lucide-react'
 import { ServiceVitals } from './components/ServiceVitals'
 import { MasterRecords } from './components/MasterRecords'
 import { RequestConsole } from './components/RequestConsole'
 import { BoundaryEnforcement } from './components/BoundaryEnforcement'
-import { Knob } from './components/Knob'
-import type { Detent } from './components/Knob'
-import { TRACE_WINDOW } from './components/Beam'
 
 export interface Telemetry {
   system: {
@@ -41,28 +36,33 @@ export interface Telemetry {
   telemetryLatencyMs: number
 }
 
-type FnId = 'vitals' | 'records' | 'probe' | 'boundaries'
+/** The four severities a diagnostic can carry. Computed from readings, never chosen. */
+export type Sev = 'note' | 'warn' | 'error' | 'help'
 
-interface Fn {
-  id: FnId
-  ref: string
+/** The window is a live view, not a history: sixty samples, then the oldest falls off. */
+export const SAMPLE_WINDOW = 60
+
+type CheckId = 'vitals' | 'records' | 'probe' | 'boundaries'
+
+interface Check {
+  id: CheckId
+  code: string
   name: string
-  Icon: LucideIcon
 }
 
-const FNS: Fn[] = [
-  { id: 'vitals', ref: 'SIG-01', name: 'Vitals', Icon: Activity },
-  { id: 'records', ref: 'REC-02', name: 'Records', Icon: Boxes },
-  { id: 'probe', ref: 'REQ-03', name: 'Probe', Icon: Terminal },
-  { id: 'boundaries', ref: 'BND-04', name: 'Boundaries', Icon: ShieldHalf },
+const CHECKS: Check[] = [
+  { id: 'vitals', code: 'SVC-001', name: 'service vitals' },
+  { id: 'records', code: 'REC-002', name: 'master records' },
+  { id: 'probe', code: 'REQ-003', name: 'request probe' },
+  { id: 'boundaries', code: 'BND-004', name: 'module boundaries' },
 ]
 
-/** Sampling interval. HOLD stops the sweep without discarding the window. */
-const DETENTS: Detent[] = [
-  { value: 2000, legend: '2.0 s' },
-  { value: 3000, legend: '3.0 s' },
-  { value: 5000, legend: '5.0 s' },
-  { value: 10000, legend: ' 10 s' },
+/** Sampling interval. HOLD stops the reads without discarding the window. */
+const RATES: { value: number; legend: string }[] = [
+  { value: 2000, legend: '2.0s' },
+  { value: 3000, legend: '3.0s' },
+  { value: 5000, legend: '5.0s' },
+  { value: 10000, legend: '10s' },
   { value: 0, legend: 'HOLD' },
 ]
 
@@ -82,8 +82,11 @@ export function App() {
   const [fault, setFault] = useState<string | null>(null)
   const [fetching, setFetching] = useState(false)
   const [pollMs, setPollMs] = useState(3000)
-  const [active, setActive] = useState<FnId>('vitals')
-  const railRef = useRef<HTMLDivElement | null>(null)
+  const [active, setActive] = useState<CheckId>('vitals')
+  /** Incremented on every successful read. Drives the caret sweep by changing
+      `data-strike`, so the annotation is re-struck rather than remounted. */
+  const [reads, setReads] = useState(0)
+  const checksRef = useRef<HTMLDivElement | null>(null)
 
   const sample = useCallback(async () => {
     setFetching(true)
@@ -94,8 +97,9 @@ export function App() {
       const data: Telemetry = body.data
       setTelemetry(data)
       setFault(null)
-      setCh1((prev) => [...prev, data.database.latencyMs].slice(-TRACE_WINDOW))
-      setCh2((prev) => [...prev, data.memory.heapUsagePercent].slice(-TRACE_WINDOW))
+      setCh1((prev) => [...prev, data.database.latencyMs].slice(-SAMPLE_WINDOW))
+      setCh2((prev) => [...prev, data.memory.heapUsagePercent].slice(-SAMPLE_WINDOW))
+      setReads((n) => n + 1)
     } catch (err) {
       setFault(err instanceof Error ? err.message : 'telemetry unreachable')
     } finally {
@@ -113,9 +117,9 @@ export function App() {
     return () => clearInterval(timer)
   }, [pollMs, sample])
 
-  /** Arrow keys step the function selector, as a roving tablist should. */
+  /** Arrow keys step the check list, as a roving tablist should. */
   const onRailKey = (event: KeyboardEvent<HTMLDivElement>) => {
-    const order = FNS.map((f) => f.id)
+    const order = CHECKS.map((c) => c.id)
     const i = order.indexOf(active)
     let next = i
     if (event.key === 'ArrowDown' || event.key === 'ArrowRight') next = (i + 1) % order.length
@@ -125,163 +129,146 @@ export function App() {
     else return
     event.preventDefault()
     setActive(order[next])
-    railRef.current?.querySelectorAll<HTMLButtonElement>('button.fn')[next]?.focus()
+    checksRef.current?.querySelectorAll<HTMLButtonElement>('button.check')[next]?.focus()
   }
 
   const sys = telemetry?.system
   const dbLost = telemetry ? telemetry.database.status !== 'connected' : false
   const held = pollMs === 0
 
-  // AUTO while sweeping, HELD when the knob is at HOLD, LOST on a failed read.
-  const trigger = fault || dbLost ? 'LOST' : held ? 'HELD' : 'AUTO'
-  const triggerTone = trigger === 'LOST' ? 'fault' : trigger === 'HELD' ? 'armed' : undefined
+  /* Checking while sampling, held at the HOLD detent, aborted on a failed read.
+     Same derivation the bench used, in the vocabulary of this world. */
+  const run = fault || dbLost ? 'aborted' : held ? 'held' : 'checking'
+
+  /* Severity is computed, never chosen. `error` is reserved for real faults and
+     for values that cannot be measured — a heap over its own reported total is
+     a `warn`, however far over it runs. BND-004 is a permanent `warn` because
+     two of its statuses are string constants in the route, not results. */
+  const heapPct = telemetry?.memory.heapUsagePercent ?? 0
+  const sevOf: Record<CheckId, Sev> = {
+    vitals: fault || dbLost ? 'error' : heapPct >= 75 ? 'warn' : 'note',
+    records: fault || dbLost ? 'error' : 'note',
+    probe: 'note',
+    boundaries: 'warn',
+  }
+
+  const slug = sys ? sys.name.toLowerCase().replace(/\s+/g, '-') : 'healthcare-erp-backend'
 
   return (
-    <div className="bench">
-      <div className="inst">
-        <header className="bezel-top">
-          <div className="ident">
-            <h1 className="dm">Healthcare ERP</h1>
-            <div className="desig">
-              <span className="desig-model">SIGNAL BENCH · BACKEND MONITOR</span>
-              <span className="desig-sep" aria-hidden="true" />
-              <span className="desig-model">
-                {sys ? `v${sys.version} · ${sys.environment} · port ${sys.port}` : 'awaiting first sample'}
-              </span>
-            </div>
-          </div>
-
-          <div className="strip">
-            <div className="rbox" data-ch="1" data-state={dbLost || fault ? 'fault' : undefined}>
-              <div className="rbox-k">
-                <span className="lamp" data-on={!fault && !dbLost} data-live={fetching || undefined} />
-                <span className="nom nom-xs">CH1 · PG round-trip</span>
-              </div>
-              <div className="rbox-v">
-                {telemetry && !dbLost ? telemetry.database.latencyMs.toFixed(2) : '——'}
-                <span className="unit">ms</span>
-              </div>
-            </div>
-
-            <div className="rbox" data-ch="2">
-              <div className="rbox-k">
-                <span className="lamp" data-on={Boolean(telemetry)} />
-                <span className="nom nom-xs">CH2 · heap in use</span>
-              </div>
-              <div className="rbox-v">
-                {telemetry ? telemetry.memory.heapUsagePercent : '——'}
-                <span className="unit">%</span>
-              </div>
-            </div>
-
-            <div className="rbox" data-state={held ? 'armed' : undefined}>
-              <div className="rbox-k">
-                <span className="lamp" data-tone="amber" data-on={held} />
-                <span className="nom nom-xs">Timebase</span>
-              </div>
-              <div className="rbox-v">
-                {held ? 'HOLD' : (pollMs / 1000).toFixed(1)}
-                {!held && <span className="unit">s/samp</span>}
-              </div>
-            </div>
-
-            <div className="rbox" data-state={triggerTone}>
-              <div className="rbox-k">
-                <span
-                  className="lamp"
-                  data-tone={trigger === 'LOST' ? 'warn' : trigger === 'HELD' ? 'amber' : undefined}
-                  data-on={trigger !== 'AUTO' || !fault}
-                />
-                <span className="nom nom-xs">Trigger</span>
-              </div>
-              <div className="rbox-v" role="status">
-                {trigger}
-              </div>
-            </div>
-          </div>
-        </header>
-
-        <div className="deck">
-          <div className="rail">
-            <fieldset className="blk">
-              <legend>Function</legend>
-              <div className="fns" role="tablist" aria-label="Bench function" ref={railRef} onKeyDown={onRailKey}>
-                {FNS.map(({ id, ref, name, Icon }) => (
-                  <button
-                    key={id}
-                    type="button"
-                    role="tab"
-                    className="fn"
-                    aria-selected={active === id}
-                    tabIndex={active === id ? 0 : -1}
-                    onClick={() => setActive(id)}
-                  >
-                    <Icon size={15} strokeWidth={1.7} className="fn-ico" aria-hidden="true" />
-                    <span>
-                      <span className="fn-name">{name}</span>
-                      <span className="fn-ref">{ref}</span>
-                    </span>
-                  </button>
-                ))}
-              </div>
-            </fieldset>
-
-            <Knob label="Sec / sample" detents={DETENTS} value={pollMs} onChange={setPollMs} />
-
-            <fieldset className="blk">
-              <legend>Acquire</legend>
-              <button
-                type="button"
-                className="btn btn-pri btn-wide"
-                onClick={() => void sample()}
-                disabled={fetching}
-              >
-                <Zap size={12} strokeWidth={2} className={fetching ? 'spin' : undefined} aria-hidden="true" />
-                {fetching ? 'Sampling' : 'Single sweep'}
-              </button>
-              <p className="nom nom-xs" style={{ marginTop: 10, lineHeight: 1.6 }}>
-                {ch1.length} / {TRACE_WINDOW} samples held
-              </p>
-            </fieldset>
-          </div>
-
-          <main className="work" key={active}>
-            <div className="raster">
-              {active === 'vitals' && (
-                <ServiceVitals
-                  data={telemetry}
-                  ch1={ch1}
-                  ch2={ch2}
-                  pollMs={pollMs}
-                  fault={fault}
-                  dbLost={dbLost}
-                  trigger={trigger}
-                />
-              )}
-              {active === 'records' && <MasterRecords />}
-              {active === 'probe' && <RequestConsole />}
-              {active === 'boundaries' && <BoundaryEnforcement data={telemetry} />}
-            </div>
-          </main>
+    <div className="report">
+      <div className="field">
+        <div className="field-head">
+          <b>
+            checking {slug}
+            {sys ? ` v${sys.version}` : ''}
+          </b>
+          <span>{sys ? `(${sys.environment}) · port ${sys.port}` : '(reading…)'}</span>
         </div>
 
-        <footer className="apron">
-          <span className="nom nom-xs">
-            {sys ? `${sys.runtime} · ${sys.platform}/${sys.arch}` : 'runtime unread'} · modular monolith
+        <div className="field-grp">
+          <span className="field-label" id="checks-label">
+            checks
           </span>
-          <span className="apron-links">
-            <a href="/docs" target="_blank" rel="noreferrer">
-              swagger&nbsp;ui
-            </a>
-            <a href="/docs/openapi.json" target="_blank" rel="noreferrer">
-              openapi.json
-            </a>
-            <a href="/health" target="_blank" rel="noreferrer">
-              /health
-            </a>
+          <hr className="field-rule" />
+          <div
+            className="checks"
+            role="tablist"
+            aria-labelledby="checks-label"
+            aria-orientation="vertical"
+            ref={checksRef}
+            onKeyDown={onRailKey}
+          >
+            {CHECKS.map(({ id, code, name }) => (
+              <button
+                key={id}
+                type="button"
+                role="tab"
+                className="check"
+                data-sev={sevOf[id]}
+                aria-selected={active === id}
+                tabIndex={active === id ? 0 : -1}
+                onClick={() => setActive(id)}
+              >
+                <span>
+                  <span className="check-code">{code}</span>
+                  <span className="check-name">{name}</span>
+                </span>
+                <span className="check-sev">{sevOf[id]}</span>
+              </button>
+            ))}
+          </div>
+          <hr className="field-rule" />
+        </div>
+
+        <div className="field-grp">
+          <span className="field-label" id="rate-label">
+            sample rate
           </span>
-        </footer>
+          <div className="rate" role="group" aria-labelledby="rate-label">
+            {RATES.map(({ value, legend }) => (
+              <button
+                key={value}
+                type="button"
+                className="rate-opt"
+                aria-pressed={pollMs === value}
+                onClick={() => setPollMs(value)}
+              >
+                {legend}
+              </button>
+            ))}
+          </div>
+          <div className="rate">
+            <button
+              type="button"
+              className="rate-opt"
+              onClick={() => void sample()}
+              disabled={fetching}
+            >
+              {fetching ? 'reading…' : 'read now'}
+            </button>
+          </div>
+        </div>
+
+        <p className="field-note">
+          <span className="sr">Run state: </span>
+          {run === 'aborted'
+            ? 'aborted — the last read did not complete.'
+            : run === 'held'
+              ? 'held — no further reads until the rate is set or you read now.'
+              : `checking — one read every ${(pollMs / 1000).toFixed(1)} s.`}{' '}
+          {ch1.length} of {SAMPLE_WINDOW} samples held; the oldest falls off.
+        </p>
+
+        <div className="field-foot">
+          <a href="/docs" target="_blank" rel="noreferrer">
+            /docs
+          </a>
+          <a href="/docs/openapi.json" target="_blank" rel="noreferrer">
+            /docs/openapi.json
+          </a>
+          <a href="/health" target="_blank" rel="noreferrer">
+            /health
+          </a>
+        </div>
       </div>
+
+      <main className="sheet">
+        {active === 'vitals' && (
+          <ServiceVitals
+            data={telemetry}
+            ch1={ch1}
+            ch2={ch2}
+            pollMs={pollMs}
+            fault={fault}
+            dbLost={dbLost}
+            run={run}
+            seq={reads}
+          />
+        )}
+        {active === 'records' && <MasterRecords />}
+        {active === 'probe' && <RequestConsole />}
+        {active === 'boundaries' && <BoundaryEnforcement data={telemetry} />}
+      </main>
     </div>
   )
 }

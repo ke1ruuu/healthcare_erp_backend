@@ -49,6 +49,8 @@ class MockPatientRepository implements IPatientRepository {
   async create(data: Prisma.PatientCreateInput): Promise<Patient> {
     const patient: Patient = {
       id: `mock-patient-${this.patients.length + 1}`,
+      organizationId: (data as any).organizationId ?? null,
+      branchId: (data as any).branchId ?? null,
       medicalRecordNumber: data.medicalRecordNumber,
       firstName: data.firstName,
       lastName: data.lastName,

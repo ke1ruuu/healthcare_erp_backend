@@ -388,6 +388,21 @@ pre {
   font-weight: 700;
 }
 
+.rate-opt:disabled {
+  color: var(--on-field-3);
+  border-bottom-color: var(--field-rule);
+  cursor: not-allowed;
+}
+
+/* A labelled group in the field: the label, a hairline it owns, then the rows. */
+.field-grp > .field-label {
+  margin-bottom: 0.4rem;
+}
+
+.field-grp > .rate {
+  margin-top: 0.5rem;
+}
+
 .field-note {
   padding-inline: 1.25rem;
   color: var(--on-field-2);

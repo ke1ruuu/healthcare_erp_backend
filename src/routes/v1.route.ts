@@ -1,4 +1,5 @@
 import { Hono } from 'hono'
+import { authRoute } from '@/modules/auth'
 import { userRoute } from '@/modules/users'
 import { patientRoute } from '@/modules/patients'
 import { telemetryRoute } from './telemetry.route'
@@ -12,6 +13,7 @@ v1Route.get('/', (c) => {
     status: 'active',
     description: 'Healthcare ERP Backend API Version 1.0',
     endpoints: {
+      auth: '/api/v1/auth',
       users: '/api/v1/users',
       patients: '/api/v1/patients',
       telemetry: '/api/v1/telemetry',
@@ -20,6 +22,7 @@ v1Route.get('/', (c) => {
 })
 
 // Domain Module Route Mounts
+v1Route.route('/auth', authRoute)
 v1Route.route('/users', userRoute)
 v1Route.route('/patients', patientRoute)
 v1Route.route('/telemetry', telemetryRoute)

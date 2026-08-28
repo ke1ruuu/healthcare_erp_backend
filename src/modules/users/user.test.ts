@@ -41,6 +41,8 @@ class MockUserRepository implements IUserRepository {
   async create(data: Prisma.UserCreateInput): Promise<User> {
     const user: User = {
       id: `mock-uuid-${this.users.length + 1}`,
+      organizationId: (data as any).organizationId ?? null,
+      branchId: (data as any).branchId ?? null,
       email: data.email,
       passwordHash: data.passwordHash,
       firstName: data.firstName,

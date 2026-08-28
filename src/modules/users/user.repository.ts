@@ -45,12 +45,20 @@ export class UserRepository implements IUserRepository {
   async findById(id: string): Promise<User | null> {
     return prisma.user.findFirst({
       where: { id, deletedAt: null },
+      include: {
+        organization: true,
+        branch: true,
+      },
     })
   }
 
   async findByEmail(email: string): Promise<User | null> {
     return prisma.user.findFirst({
       where: { email, deletedAt: null },
+      include: {
+        organization: true,
+        branch: true,
+      },
     })
   }
 

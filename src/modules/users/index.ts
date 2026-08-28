@@ -1,6 +1,7 @@
 // Public API surface for the Users Domain Module
 
 export { userService, UserService } from './user.service'
+export { userRepository, UserRepository, type IUserRepository } from './user.repository'
 export { userRoute } from './user.route'
 export type {
   CreateUserDto,

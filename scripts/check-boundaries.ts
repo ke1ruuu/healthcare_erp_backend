@@ -30,7 +30,7 @@ const DOWNSTREAM_MODULES = [
 ]
 
 // Upstream master data modules
-const UPSTREAM_MODULES = ['users', 'patients', 'audit-logs']
+const UPSTREAM_MODULES = ['auth', 'users', 'patients', 'audit-logs']
 
 async function getTsFiles(dir: string): Promise<string[]> {
   const entries = await readdir(dir, { withFileTypes: true })

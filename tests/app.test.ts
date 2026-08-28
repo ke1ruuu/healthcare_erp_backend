@@ -21,6 +21,7 @@ describe('Healthcare ERP Backend API — Root & System Routing', () => {
     const data = await res.json()
     expect(data.version).toBe('v1')
     expect(data.status).toBe('active')
+    expect(data.endpoints.auth).toBe('/api/v1/auth')
     expect(data.endpoints.users).toBe('/api/v1/users')
     expect(data.endpoints.patients).toBe('/api/v1/patients')
   })

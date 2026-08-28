@@ -170,3 +170,133 @@ It is **stale** (documents an older "PACS reading panel" world, seed `21f5e344`,
 Wing & Bay (hospital wayfinding) · Midnight Interchange (transit diagram) · Depot Blind · **Signal Bench** (the CRT scope being replaced) · Slide Rack, Cyclorama, Shoebox Stack (dealt and resolved this round) · the canon card, Grafana-by-way-of-Vercel.
 
 Also in the re-roll pool, unused: Viewfinder, Orizuru, Darkroom (Darkroom additionally re-treads the already-spent PACS safelight world).
+
+---
+---
+
+# Resume state — written 2026-08-28 ~17:55, session ended on context exhaustion
+
+## Incident: a second agent overwrote this build mid-flight
+
+Between 17:33 and 17:42 a **different agent harness** (vendored at `.agent/skills/impeccable/`, not Claude Code) built an entirely different dashboard in this working tree — **"Command Deck"**: Inter + JetBrains Mono, `#0B0E14` ground, `#6366F1` indigo accent, five zones, metric tiles, a line chart, plus new `AuditLog.tsx` and `LineChart.tsx`. That is the canon card this brief lists as spent and the user rejected twice. It also edited backend files (deleted `src/routes/dashboard.route.ts`, modified `src/routes/{index,root,docs}.ts`, `prisma/seed.ts`, `tests/db.test.ts`, `docs/CONVENTIONS.md`).
+
+**Resolved with the user:** preserved on branch **`command-deck-agent`**, commit **`32702a0`** — do not delete, it is the only copy. `main` was restored to HEAD (`e26f728`) and the "Checked" build continues there. Backend files are back at HEAD; `dashboard.route.ts` exists again.
+
+**If dashboard files look wrong on resume, check `git status` and mtimes before writing.** `.agent/` is gitignored and still present; the other harness is not currently running.
+
+## Done and verified on disk (`main`)
+
+1. **`dashboard/src/index.css`** — complete full rewrite, the entire "Checked" system. ~950 lines. This is the visual authority; the panels are mappings onto it. Do not rewrite it — extend only where a panel genuinely needs a class it lacks.
+2. **`dashboard/public/favicon.svg`** — two hairline rules over two caret marks, petrol `#0A2320` on `#F4F6F2` inside a `#DEE2DD` field. No CRT phosphor.
+
+Fonts verified live on Google Fonts at these exact axes (HTTP 200, both variable):
+`family=Chivo:ital,wght@0,300..900;1,300..900&family=Chivo+Mono:ital,wght@0,300..700;1,300..700`
+
+## Still to do, in order
+
+*(Updated 2026-08-28 ~18:4x, second session. Items 1–2 below are now DONE — see "Session 2 progress".)*
+
+1. ~~`dashboard/index.html`~~ — **done.** Contract written, 144 words, `seed efa2b6fa`, verbatim FINISH line, Chivo axes, `color-scheme: light`, title `Checked — Healthcare ERP Backend`.
+2. ~~`dashboard/src/App.tsx`~~ — **done.** Shell rewritten; every preserved item in the file map carried over.
+3. **Four panels** — `ServiceVitals` **done** (the exemplar). `MasterRecords`, `RequestConsole`, `BoundaryEnforcement` fanned out to parallel subagents.
+4. **Delete** `Beam.tsx`, `Knob.tsx`, `Screen.tsx`, `SevenSegment.tsx` — assigned to the typecheck stage. `SAMPLE_WINDOW = 60` now exported from `App.tsx`; `pickScale` dies.
+5. Then brief steps 5–10: `cd dashboard && bun run build`, grep built output for `efa2b6fa`, `detect.mjs --json` **once**, screenshots to `.impeccable/shots/`, `impeccable-finish-reviewer` (two rounds max), `impeccable-documenter` for `dashboard/DESIGN.md`.
+
+## Session 2 progress — written 2026-08-28
+
+Both services re-verified live: backend `:3000` → 200, vite `:5173` → 200. Live telemetry now reports
+**v1.0.4**, `heapUsagePercent: 104` (heapUsedMB 5.25 > heapTotalMB 5.04) — still real, still unclamped.
+
+**Written and typecheck-clean:**
+
+- **`index.html`** — contract as an HTML comment, first child of `<body>`.
+- **`App.tsx`** — `.report` shell. Preserved: `interface Telemetry`, `formatUptime`, `sample()`, both
+  buffers sliced to `SAMPLE_WINDOW`, the five rate detents (2/3/5/10 s + HOLD=0), the roving tablist
+  (selector updated `button.fn` → `button.check`), the three footer links. `FNS` → `CHECKS`
+  (SVC-001/REC-002/REQ-003/BND-004). Trigger derivation kept, revoiced: `aborted` / `held` / `checking`.
+  New: `reads` counter → `seq`, and `sevOf` computing each check's severity.
+- **`ServiceVitals.tsx`** — the exemplar. Local `Gap` and `Span` components, hand-built `Window`
+  (60 `<line>`, `vector-effect="non-scaling-stroke"`, `preserveAspectRatio="none"`), both fault cases
+  distinct, both closing honesty notes.
+
+**Two deliberate departures from this brief, both load-bearing:**
+
+1. **The caret sweep is driven by React `key`, not by the `data-strike` value alone.** The brief said
+   "remounting is not needed", but a CSS keyframe animation does **not** restart when an attribute's
+   *value* changes — only on remount or an animation-name change. So `Span` sets `key={`c${seq}`}` on
+   the caret and `key={`v${seq}`}` on the value. `data-strike` stays as the presence hook the CSS
+   already targets, so `index.css` needed no change. Without this the signature motion fires once and
+   never again.
+2. **`.gap` spacers inside `.diag` must be PAIRS** — `<div className="gut gap"/><div className="cell gap"/>`.
+   A lone `.gap` child lands in the gutter column *without* the `border-right`, which punches a hole
+   in the unbroken `|`. The `Gap` component enforces this.
+
+**`index.css` extended by 14 lines only** (it is otherwise untouched): `.rate-opt:disabled` (a real
+missing state) and `.field-grp > .field-label` / `.field-grp > .rate` margins for the field's
+label-then-hairline-then-rows rhythm.
+
+**Decided:** no icons anywhere. `lucide-react` stays a dependency but the world has no icon system —
+a compiler diagnostic has none, and `index.css` has no icon class. Affordances that were icons
+(sort direction, pagination, layer flow) are carried in words or in a mono `^`/`v` caret.
+
+**Still unverified at the time of writing:** `bun run build`, the seed grep, `detect.mjs`,
+screenshots, finish review, `DESIGN.md`.
+
+## CSS vocabulary contract — what the panels must use
+
+Read the token block at the top of `index.css` for colour/type/motion tokens. Structural classes:
+
+**Shell:** `.report` (grid: field + sheet) · `.field` (petrol column) · `.field-head` (`checking healthcare-erp-backend v1.0.2 (development)` — b + span) · `.field-label` · `.field-rule` · `.field-note` · `.field-foot` (the three links) · `.checks` + `.check` + `.check-code` / `.check-name` / `.check-sev` (the tablist; `aria-selected` reverses to sheet-on-ink) · `.rate` + `.rate-opt` (poll detents, `aria-pressed`) · `.sheet`
+
+**Diagnostic grid** — `.diag` is `grid-template-columns: var(--gut-w) 1fr`. **Every logical row contributes exactly two children: a `.gut` then a `.cell`.** The gutter rule is `border-right` on contiguous `.gut` cells, so it runs unbroken like `|` — **never introduce row gaps**; use `.gap` / `.gap-lg` spacer rows instead. `.cell-full` spans both columns for the severity line and provenance (they sit outside the gutter, as in rustc).
+
+`.sev` (the one large line; `.sev-key` mono 700 severity-coloured + `.sev-msg` weight 300) · `.prov` + `.prov-arr` (the `-->` line) · `.note` + `.note-key` (`= note:` / `= help:` rows, `data-sev` drives colour) · `.help-cmd` · `.code`
+
+**Spans and carets** — `.span` is a nested grid sharing `--label-w`, which is *what makes the caret land under the value*. Value row: `.span-label` + `.span-val`. Caret row: empty label cell + `.span-ann` containing `.caret` then `.caret-note`. **Caret length must be the value's character count** (`'^'.repeat(display.length)`) — both are Chivo Mono tabular at one size, so widths match exactly. `.dash` for an unmeasurable value (em dash, never `0`).
+
+Worked shape:
+
+```jsx
+<div className="gut" aria-hidden="true" />
+<div className="cell cell-full">
+  <p className="sev" data-sev={sev}>
+    <span className="sev-key">{sev}</span>
+    <span className="sev-msg">: service answers and Postgres is reachable</span>
+  </p>
+  <p className="prov"><span className="prov-arr">--&gt;</span> GET /api/v1/telemetry · <b>0.79 ms</b> probe</p>
+</div>
+
+<div className="gut">01</div>
+<div className="cell">
+  <div className="span">
+    <span className="span-label">uptime</span>
+    <span className="span-val" data-strike={seq}>06:10:16</span>
+  </div>
+  <div className="span">
+    <span aria-hidden="true" />
+    <span className="span-ann">
+      <span className="caret" data-sev="note" data-strike={seq}>{'^'.repeat(8)}</span>{' '}
+      <span className="caret-note">Bun 1.3.11 · alive since the process started</span>
+    </span>
+  </div>
+</div>
+```
+
+**Window:** `.win` (the SVG) + `.win-col` (`data-now="true"` on the newest) + `.win-lab` + `.win-empty`. Sixty `<line>` elements, `vector-effect="non-scaling-stroke"` so they stay hairline under `preserveAspectRatio="none"`. No gridlines, no baseline rule, no legend, no axis. Direct-label `now / mean / peak` in `.win-lab` beneath.
+
+**Controls:** `.btn` (+ `.btn-hi`; hover and `aria-pressed` both reverse to ink fill) · `.row` / `.row-end` · `.probes` + `.probe` + `.probe-path` / `.probe-note`
+
+**Records:** `.tbl-wrap` + `.tbl` with `.key` (mono 700 identifiers) / `.mono-cell` / `.dim` / `.num` · `.th-btn` · `.nil` · `.tag` (`data-sev="warn"` for non-ACTIVE) · `data-opt="true"` hides below 900px
+
+**Form:** `.form-grid` · `.f` + `.f-label` + `.in` (`data-bad`) · `.f-err` — a rejected field is annotated like any other span: a `.caret` run struck beneath it carrying the server's message
+
+**Body:** `.pre` (`data-empty`) · **Layout:** `.split` · `.split-31` · `.stack` · `.sr`
+
+## Design decisions already made — keep these
+
+- **Motion.** The caret sweep is `@keyframes strike` (clip-path, 180 ms, exponential ease-out) plus one `swap` on the numeral, both gated behind `prefers-reduced-motion: no-preference`. Drive it by adding a **`reads` counter** to App state (incremented on each successful sample) passed down as `seq` and set as `data-strike` — remounting is not needed, but the attribute must change per read. No pulse, no glow, no breathing badge anywhere.
+- **Severity is computed, not chosen.** `note` = normal reading · `warn` = declared-not-verified (BND-004, permanently) and heap ≥ 0.75 · `error` = fault or unmeasurable only. The incumbent Meter thresholds are preserved as the `≥0.75` / `≥0.9` pair, but **`error` is reserved for real faults** — a heap over-scale must not make the page read `error`. Page-level severity = worst *row* severity under that rule.
+- **Live telemetry reports `heapUsagePercent: 120`** (Bun reports `heapUsedMB` 10.89 > `heapTotalMB` 9.06). This is real. Handle it honestly in the qualifier — name it as in use against the total the runtime reports — and never clamp it silently to 100.
+- **Both sample buffers are used.** ch1 (`database.latencyMs`) draws the sixty-column window under the round-trip row; ch2 (`memory.heapUsagePercent`) draws its own under the heap row. Same grammar.
+- **Contrast is checked, not assumed.** Every severity hue has a `-field` variant because ochre/vermilion/cobalt fall below 4.5:1 on petrol. **Keep severity-coloured text on the sheet or use the `--*-field` token on the field** — plain `--error` on `--ground` is only 3.88:1.
+

@@ -288,6 +288,15 @@ describe('PostgreSQL Database Configuration & Conventions', () => {
       expect(indexNames.some((n) => n.includes('audit_logs_user_id'))).toBe(true)
       expect(indexNames.some((n) => n.includes('audit_logs_entity_entity_id'))).toBe(true)
       expect(indexNames.some((n) => n.includes('audit_logs_created_at'))).toBe(true)
+
+      // Sessions table indexes
+      expect(indexNames.some((n) => n.includes('sessions_user_id'))).toBe(true)
+      expect(indexNames.some((n) => n.includes('sessions_refresh_token'))).toBe(true)
+
+      // Organizations & Branches table indexes
+      expect(indexNames.some((n) => n.includes('organizations_code'))).toBe(true)
+      expect(indexNames.some((n) => n.includes('branches_organization_id'))).toBe(true)
+      expect(indexNames.some((n) => n.includes('branches_code'))).toBe(true)
     })
   })
 

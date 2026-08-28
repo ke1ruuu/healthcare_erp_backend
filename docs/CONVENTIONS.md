@@ -434,6 +434,22 @@ All listing endpoints (`GET /api/v1/<domain>`) adhere to standard query paramete
 - **Exceptions**: Domain services throw typed `AppException` subclasses (`NotFoundException`, `ConflictException`, `UnauthorizedException`, `ForbiddenException`, `ValidationException`), which are caught and formatted automatically by the global `errorHandler`.
 - **404 Handling**: Unmatched routes trigger `notFoundHandler`, returning a 404 `RESOURCE_NOT_FOUND` error envelope with `requestId`.
 
+### Authentication Provider & Authenticated Session Validation
+- **Token Architecture**: Dual-token architecture with short-lived JWT Access Tokens (15 minutes, HMAC-SHA256) and long-lived Database Refresh Tokens (7 days, opaque with rotation).
+- **Session Lifecycle & Revocation**:
+  - `Session` model in PostgreSQL persists `userId`, `refreshToken`, `userAgent`, `ipAddress`, `expiresAt`, `revokedAt`.
+  - Logging out immediately marks `revokedAt = now()`.
+  - Password updates immediately revoke all active sessions for that user.
+  - Refresh operations rotate the refresh token, revoking the previous session and creating a new session record.
+- **Authentication Middlewares**:
+  - `requireAuth`: Validates `Bearer <token>` in `Authorization` header, verifies signature and expiration, verifies user active state in DB, and injects `user` (`SessionUser`) and `userId` into context. Automatically resolves active `organization` and `branch` context from user defaults or `X-Organization-ID` / `X-Branch-ID` headers.
+  - `requireRoles(...roles)`: RBAC authorization guard ensuring the authenticated staff member possesses one of the allowed roles.
+  - `optionalAuth`: Extracts session user if a valid token is present without rejecting unauthenticated requests.
+  - `requireOrganization`: Strictly requires valid and active Organization context; blocks unauthorized cross-tenant requests for non-SUPER_ADMIN users.
+  - `requireBranch`: Strictly requires valid and active Branch context; ensures the branch belongs to the active organization and enforces branch access boundaries.
+  - `requireTenantContext`: Composed middleware enforcing both Organization and Branch contexts.
+- **Security Prohibitions**: Passwords must be hashed using Bcrypt (`Bun.password.hash(password, { algorithm: 'bcrypt', cost: 10 })`). Raw passwords and password hashes must NEVER be returned in response payloads or logged.
+
 ---
 
 ## 7. TypeScript & Coding Best Practices

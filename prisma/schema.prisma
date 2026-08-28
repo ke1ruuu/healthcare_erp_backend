@@ -26,6 +26,16 @@ enum UserStatus {
   SUSPENDED
 }
 
+enum OrganizationStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum BranchStatus {
+  ACTIVE
+  INACTIVE
+}
+
 enum PatientStatus {
   ACTIVE
   INACTIVE
@@ -52,22 +62,74 @@ enum BloodType {
   UNKNOWN
 }
 
+model Organization {
+  id          String             @id @default(uuid())
+  name        String
+  code        String             @unique
+  description String?
+  status      OrganizationStatus @default(ACTIVE)
+  createdAt   DateTime           @default(now()) @map("created_at")
+  updatedAt   DateTime           @updatedAt @map("updated_at")
+  deletedAt   DateTime?          @map("deleted_at")
+
+  branches    Branch[]
+  users       User[]
+  patients    Patient[]
+
+  @@index([code])
+  @@index([status])
+  @@index([deletedAt])
+  @@map("organizations")
+}
+
+model Branch {
+  id             String       @id @default(uuid())
+  organizationId String       @map("organization_id")
+  name           String
+  code           String
+  status         BranchStatus @default(ACTIVE)
+  address        String?      @map("address")
+  phoneNumber    String?      @map("phone_number")
+  email          String?      @map("email")
+  createdAt      DateTime     @default(now()) @map("created_at")
+  updatedAt      DateTime     @updatedAt @map("updated_at")
+  deletedAt      DateTime?    @map("deleted_at")
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  users          User[]
+  patients       Patient[]
+
+  @@unique([organizationId, code])
+  @@index([organizationId])
+  @@index([code])
+  @@index([status])
+  @@index([deletedAt])
+  @@map("branches")
+}
+
 model User {
-  id           String      @id @default(uuid())
-  email        String      @unique
-  passwordHash String      @map("password_hash")
-  firstName    String      @map("first_name")
-  lastName     String      @map("last_name")
-  role         Role        @default(RECEPTIONIST)
-  status       UserStatus  @default(ACTIVE)
-  phoneNumber  String?     @map("phone_number")
-  avatarUrl    String?     @map("avatar_url")
-  createdAt    DateTime    @default(now()) @map("created_at")
-  updatedAt    DateTime    @updatedAt @map("updated_at")
-  deletedAt    DateTime?   @map("deleted_at")
+  id             String        @id @default(uuid())
+  organizationId String?       @map("organization_id")
+  branchId       String?       @map("branch_id")
+  email          String        @unique
+  passwordHash   String        @map("password_hash")
+  firstName      String        @map("first_name")
+  lastName       String        @map("last_name")
+  role           Role          @default(RECEPTIONIST)
+  status         UserStatus    @default(ACTIVE)
+  phoneNumber    String?       @map("phone_number")
+  avatarUrl      String?       @map("avatar_url")
+  createdAt      DateTime      @default(now()) @map("created_at")
+  updatedAt      DateTime      @updatedAt @map("updated_at")
+  deletedAt      DateTime?     @map("deleted_at")
 
-  auditLogs    AuditLog[]
+  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  branch         Branch?       @relation(fields: [branchId], references: [id], onDelete: SetNull)
+  auditLogs      AuditLog[]
+  sessions       Session[]
 
+  @@index([organizationId])
+  @@index([branchId])
   @@index([email])
   @@index([role])
   @@index([status])
@@ -76,8 +138,29 @@ model User {
   @@map("users")
 }
 
+model Session {
+  id           String    @id @default(uuid())
+  userId       String    @map("user_id")
+  refreshToken String    @unique @map("refresh_token")
+  userAgent    String?   @map("user_agent")
+  ipAddress    String?   @map("ip_address")
+  expiresAt    DateTime  @map("expires_at")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  revokedAt    DateTime? @map("revoked_at")
+
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([refreshToken])
+  @@index([expiresAt])
+  @@index([revokedAt])
+  @@map("sessions")
+}
+
 model Patient {
   id                    String        @id @default(uuid())
+  organizationId        String?       @map("organization_id")
+  branchId              String?       @map("branch_id")
   medicalRecordNumber   String        @unique @map("medical_record_number")
   firstName             String        @map("first_name")
   lastName              String        @map("last_name")
@@ -94,6 +177,11 @@ model Patient {
   updatedAt             DateTime      @updatedAt @map("updated_at")
   deletedAt             DateTime?     @map("deleted_at")
 
+  organization          Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  branch                Branch?       @relation(fields: [branchId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId])
+  @@index([branchId])
   @@index([medicalRecordNumber])
   @@index([firstName, lastName])
   @@index([email])

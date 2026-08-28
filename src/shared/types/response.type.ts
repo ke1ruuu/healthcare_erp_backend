@@ -38,12 +38,32 @@ export interface ApiErrorResponse {
 
 export type ApiResponse<T> = ApiSuccessResponse<T> | ApiPaginatedResponse<T> | ApiErrorResponse
 
+export interface OrganizationContext {
+  id: string
+  name: string
+  code: string
+  status: 'ACTIVE' | 'INACTIVE'
+}
+
+export interface BranchContext {
+  id: string
+  organizationId: string
+  name: string
+  code: string
+  status: 'ACTIVE' | 'INACTIVE'
+}
+
 declare module 'hono' {
   interface ContextVariableMap {
     requestId: string
     validatedBody: any
     validatedQuery: any
     validatedParam: any
-    user?: { id?: string; email?: string; role?: string }
+    user: any
+    userId: string
+    organization?: OrganizationContext
+    organizationId?: string
+    branch?: BranchContext
+    branchId?: string
   }
 }
